@@ -36,6 +36,8 @@ uv sync                                   # install deps into .venv
 uv run python manage.py migrate
 uv run python manage.py createsuperuser
 uv run python manage.py runserver         # http://127.0.0.1:8000/admin/
+# API docs:  http://127.0.0.1:8000/api/docs/  (Swagger)
+# API base:  http://127.0.0.1:8000/api/v1/
 
 # Option B — Postgres + Redis via Docker (recommended):
 docker compose -f ../infrastructure/docker-compose.dev.yml up -d

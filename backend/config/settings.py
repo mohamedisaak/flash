@@ -53,7 +53,9 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    # Added phase by phase (DRF, drf-spectacular, etc.) as those phases land.
+    "rest_framework",  # Django REST Framework — the JSON API layer
+    "django_filters",  # declarative filtering/search on list endpoints
+    "drf_spectacular",  # OpenAPI 3 schema + Swagger/Redoc docs
 ]
 
 # Local apps — one Django app per bounded context (modular monolith).
@@ -86,6 +88,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Records who did what on write requests to the API (see apps/common/middleware.py).
+    "apps.common.middleware.AuditLogMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -176,3 +180,87 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Defaults
 # ---------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ---------------------------------------------------------------------------
+# Django REST Framework  (see teaching/06-django-rest-framework/)
+# ---------------------------------------------------------------------------
+REST_FRAMEWORK = {
+    # How a request proves who it is. JWT for API clients (web/mobile); session
+    # auth is kept so the browsable API works while you're logged into /admin/.
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    # Safe default: authenticated-only. Individual views relax this (e.g. public
+    # read access) explicitly, so nothing is public by accident.
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    # List endpoints are paginated by default so we never dump a whole table.
+    "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.DefaultPagination",
+    "PAGE_SIZE": 20,
+    # Filtering, search, and ordering wired globally; views declare their fields.
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+    # Rate limiting (throttling): abuse protection for anon vs. logged-in users.
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_ANON", default="60/min"),
+        "user": env("THROTTLE_USER", default="1000/min"),
+    },
+    # drf-spectacular generates the OpenAPI schema from our views/serializers.
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# JSON Web Token settings (djangorestframework-simplejwt).
+from datetime import timedelta  # noqa: E402  (kept next to the setting it configures)
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_MINUTES", default=30)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_DAYS", default=7)),
+    "ROTATE_REFRESH_TOKENS": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# OpenAPI / Swagger metadata (drf-spectacular).
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Flash News API",
+    "DESCRIPTION": "REST API for the Flash news publishing platform.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,  # hide the raw schema endpoint from the docs
+    "COMPONENT_SPLIT_REQUEST": True,
+    # Several models have a "status" field with different choice sets; give each
+    # generated enum a distinct, stable name instead of an auto hash suffix.
+    "ENUM_NAME_OVERRIDES": {
+        "ArticleStatusEnum": "apps.articles.models.ArticleStatus.choices",
+        "CommentStatusEnum": "apps.comments.models.CommentStatus.choices",
+        "LiveBlogStatusEnum": "apps.livecoverage.models.LiveBlogStatus.choices",
+        "UserStatusEnum": "apps.accounts.models.UserStatus.choices",
+        "AdPlacementEnum": "apps.ads.models.AdPlacement.choices",
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+# The audit middleware writes to the "flash.audit" logger. In production, point
+# this at a file/handler or a log aggregator; here it goes to the console.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {"format": "[{asctime}] {levelname} {name}: {message}", "style": "{"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "simple"},
+    },
+    "loggers": {
+        "flash.audit": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}

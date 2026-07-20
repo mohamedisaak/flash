@@ -27,8 +27,11 @@ The build proceeds in phases (see [`PLAN.md`](PLAN.md)). **Done so far:**
 - ✅ **Phase 0** — Monorepo restructuring + teaching curriculum scaffold.
 - ✅ **Phase 1** — Architecture & database design: 12 Django apps, full model
   layer, migrations, admin, ERD, and paired teaching lessons.
+- ✅ **Phase 2** — DRF REST API: JWT auth, RBAC permissions, 37 endpoints under
+  `/api/v1/`, OpenAPI/Swagger docs, throttling, audit logging, and 16 tests.
 
-Next up: **Phase 2** — the DRF REST API (auth, endpoints, OpenAPI docs).
+Next up: **Phase 3** — media pipeline & background processing (Pillow, FFmpeg,
+Celery).
 
 ## Quick start (backend)
 

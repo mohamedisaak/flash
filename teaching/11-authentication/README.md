@@ -2,10 +2,17 @@
 
 **Status:** 🟢 In progress
 
-Passwords, JWT, sessions, RBAC.
+Passwords, JWT, sessions, and RBAC — how the platform knows *who* you are and
+*what* you're allowed to do.
 
-Lessons are numbered markdown files added here as the matching
-part of the platform gets built (teach-as-you-build). If this folder
-only has a README so far, the code it teaches hasn't been written yet.
+## Lessons
+
+1. [Users, passwords & RBAC](01-users-and-rbac.md)
+2. [JWT authentication & DRF permissions](02-jwt-and-drf-permissions.md)
+
+## Related
+
+- The user model & roles: [`../30-database-design/user-and-roles.md`](../30-database-design/user-and-roles.md)
+- Permission classes in practice: [`../06-django-rest-framework/04-queryset-scoping.md`](../06-django-rest-framework/04-queryset-scoping.md)
 
 ← Back to the [curriculum index](../README.md)

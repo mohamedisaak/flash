@@ -222,7 +222,8 @@ is added phase by phase.
 - [x] Phase 0 — Repo restructuring (backend/ + teaching/ scaffold, 40 topics)
 - [x] Phase 1 — Architecture & Database Design (12 apps, models, migrations,
       admin, ERD, paired teaching lessons)
-- [ ] Phase 2 — Backend core (DRF API)
+- [x] Phase 2 — Backend core (DRF API: JWT auth, RBAC, 37 endpoints, OpenAPI
+      docs, throttling, audit log, 16 passing tests, paired teaching lessons)
 - [ ] Phase 3 — Media & background processing
 - [ ] Phase 4 — SEO & search
 - [ ] Phase 5 — Web frontend
@@ -252,9 +253,29 @@ This plan supersedes the earlier draft that was stored outside the repo at
   docs for every table), Authentication (users/RBAC), Docker (dev compose),
   System Design (architecture overview), and a Glossary.
 
-### Phase 2 — next up
+### Phase 2 — what shipped
 
-DRF: JWT auth, RBAC permission classes, serializers/viewsets/routers per app,
-`/api/v1/` namespace, filtering/search/pagination, drf-spectacular OpenAPI +
-Swagger, throttling, audit logging — with paired lessons in
-`teaching/06-django-rest-framework/`, `10-api-design/`, `11-authentication/`.
+- DRF wired in `config/settings.py`: JWT auth (simplejwt), authenticated-by-
+  default permissions, pagination, django-filter search/ordering, anon/user
+  throttling, drf-spectacular schema.
+- Common API layer: `apps/common/permissions.py` (RBAC permission classes),
+  `pagination.py`, and `middleware.py` (audit logging of write requests).
+- Auth endpoints (`/api/v1/auth/`): register, JWT login + refresh, `me`.
+- Serializers + viewsets + routers for every content app; **37 endpoints**
+  under `/api/v1/`, assembled by `config/api_v1.py` (versioning composition
+  root).
+- OpenAPI docs at `/api/schema/`, `/api/docs/` (Swagger), `/api/redoc/` —
+  generated warning-free.
+- 16 pytest tests (auth, articles RBAC/visibility, comment moderation) — a
+  failing test caught and fixed a real authorization gap (subscribers could
+  create articles).
+- Docs: `docs/api.md`. Teaching: `06-django-rest-framework/` (5 lessons),
+  `10-api-design/` (4 lessons), `11-authentication/` (JWT + permissions).
+
+### Phase 3 — next up
+
+Media & background processing: storage abstraction (local → MinIO/S3), Pillow
+image pipeline (variants, WebP/AVIF), FFmpeg video pipeline (thumbnails, HLS),
+Celery + Redis broker + beat schedule (scheduled publish, RSS/sitemap regen,
+analytics rollups) — with paired lessons in `teaching/08-redis/`,
+`teaching/09-celery/`.
