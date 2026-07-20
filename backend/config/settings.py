@@ -39,6 +39,12 @@ DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
+# Which browser origins (the web app, dashboards) may call the API cross-origin.
+CORS_ALLOWED_ORIGINS = env(
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://localhost:3000", "http://127.0.0.1:3000"],
+)
+
 # ---------------------------------------------------------------------------
 # Applications
 # ---------------------------------------------------------------------------
@@ -54,6 +60,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "corsheaders",  # Cross-Origin Resource Sharing (browser calls from the web app)
     "rest_framework",  # Django REST Framework — the JSON API layer
     "django_filters",  # declarative filtering/search on list endpoints
     "drf_spectacular",  # OpenAPI 3 schema + Swagger/Redoc docs
@@ -86,6 +93,9 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # CORS must sit high, before CommonMiddleware, so it can add headers to (and
+    # short-circuit) cross-origin preflight requests from the web/mobile clients.
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
