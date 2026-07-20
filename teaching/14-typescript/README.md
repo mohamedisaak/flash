@@ -1,11 +1,12 @@
 # TypeScript
 
-**Status:** ⚪ Planned
+**Status:** 🟢 In progress
 
-Typed JavaScript for the web and mobile apps.
+Typed JavaScript for the web (and later mobile) apps.
 
-Lessons are numbered markdown files added here as the matching
-part of the platform gets built (teach-as-you-build). If this folder
-only has a README so far, the code it teaches hasn't been written yet.
+## Lessons
+
+1. [What is TypeScript?](01-what-is-typescript.md)
+2. [Typing API data](02-typing-api-data.md)
 
 ← Back to the [curriculum index](../README.md)

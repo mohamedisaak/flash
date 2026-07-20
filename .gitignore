@@ -18,12 +18,15 @@ backend/staticfiles/
 # Environment / secrets
 .env
 *.env
+.env*.local
 !*.env.example
 
-# Node / frontend (added in later phases)
+# Node / frontend
 node_modules/
 .next/
 .expo/
+next-env.d.ts
+*.tsbuildinfo
 
 # OS / editor
 .DS_Store

@@ -1,0 +1,4 @@
+# pnpm reads build-script permissions here. sharp ships prebuilt binaries; its
+# install script enables Next.js image optimization in `next dev`.
+allowBuilds:
+  sharp: true

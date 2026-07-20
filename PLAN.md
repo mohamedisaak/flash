@@ -230,7 +230,10 @@ is added phase by phase.
 - [x] Phase 4 — SEO & search (sitemaps + Google News + robots.txt + RSS,
       JSON-LD structured data, Postgres full-text search w/ pluggable backend,
       42 endpoints total, 37 passing tests, paired teaching lessons)
-- [ ] Phase 5 — Web frontend  ← next
+- [~] Phase 5 — Web frontend — **public site done** (Next.js 16 App Router:
+      home/article/category/search, SSR/ISR, dynamic metadata + JSON-LD, typed
+      API client, Tailwind v4, TanStack Query; builds clean). Admin + author
+      dashboards remain (Phase 5b).
 - [ ] Phase 6 — Mobile app
 - [ ] Phase 7 — Notifications & analytics
 - [ ] Phase 8 — DevOps, CI/CD, security, testing
@@ -314,9 +317,29 @@ This plan supersedes the earlier draft that was stored outside the repo at
 - Teaching: `23-seo/` (5 lessons: foundations, structured data, sitemaps/robots,
   RSS, search). Docs: `docs/api.md` updated.
 
-### Phase 5 — next up
+### Phase 5 — what shipped (public site)
 
-Web frontend (Next.js 16, App Router): public news site (SSR/SSG/ISR + dynamic
-metadata + embedded JSON-LD from the SEO endpoints), plus the editorial/admin and
-author dashboards — with paired lessons in `teaching/12-nextjs/`, `13-react/`,
-`14-typescript/`, `15-tailwind/`, `16-shadcn/`, `17-react-query/`.
+- `web/` Next.js 16 App Router app (React 19, TS, Tailwind v4, TanStack Query).
+- Build-safe typed API client (`src/lib/api.ts`) + types mirroring the DRF
+  serializers; centralized env config.
+- Pages: home (ISR 60s), `articles/[slug]` (ISR 300s + `generateMetadata` +
+  embedded NewsArticle/Breadcrumb JSON-LD from the backend SEO endpoints),
+  `[category]` (ISR 120s, matches the sitemap's `/{slug}`), `search`
+  (client-side TanStack Query, `noindex`).
+- shadcn-style owned UI primitives (Button/Card/Badge), server-rendered header
+  with category nav, article cards using `next/image`.
+- Verified: `pnpm typecheck` and `pnpm build` both pass; route table shows
+  home/404 static (ISR) and article/category/search dynamic.
+- Teaching: `12-nextjs/` (6 lessons), `13-react/` (3), `14-typescript/` (2),
+  `15-tailwind/` (1), `16-shadcn/` (1), `17-react-query/` (2).
+
+### Phase 5b — next up
+
+Editorial/Admin dashboard + Author dashboard (authenticated Next.js app area:
+login via JWT, article CRUD with the Tiptap editor, drafts/scheduling,
+role-gated views, analytics widgets) — reusing the same API client and adding
+React Hook Form + Zod for forms.
+
+### Phase 6 — after that
+
+Mobile app (Expo / React Native) — see the roadmap above.

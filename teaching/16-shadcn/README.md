@@ -1,11 +1,11 @@
 # shadcn/ui
 
-**Status:** ⚪ Planned
+**Status:** 🟢 In progress
 
-Composable React component library used in the dashboards.
+Composable, **owned** React components styled with Tailwind.
 
-Lessons are numbered markdown files added here as the matching
-part of the platform gets built (teach-as-you-build). If this folder
-only has a README so far, the code it teaches hasn't been written yet.
+## Lessons
+
+1. [What is shadcn/ui?](01-what-is-shadcn.md)
 
 ← Back to the [curriculum index](../README.md)

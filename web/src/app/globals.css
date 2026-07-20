@@ -1,0 +1,60 @@
+/*
+ * Tailwind CSS v4 entrypoint.
+ *
+ * `@import "tailwindcss"` pulls in Tailwind's base, components, and utilities.
+ * The `@theme` block defines design tokens (colors, fonts) as CSS variables that
+ * become Tailwind utilities (e.g. `bg-brand`). This replaces v3's
+ * tailwind.config.js. See teaching/15-tailwind/01-what-is-tailwind.md.
+ */
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #b91c1c; /* news-red accent */
+  --color-brand-dark: #7f1d1d;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --muted: #9ca3af;
+    --border: #262626;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Basic prose styling for article body HTML coming from the editor. */
+.article-body :where(p, ul, ol, blockquote, h2, h3) {
+  margin-block: 0.9em;
+}
+.article-body :where(h2) {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.article-body :where(h3) {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.article-body :where(a) {
+  color: var(--color-brand);
+  text-decoration: underline;
+}
+.article-body :where(blockquote) {
+  border-inline-start: 4px solid var(--color-brand);
+  padding-inline-start: 1rem;
+  color: var(--muted);
+}

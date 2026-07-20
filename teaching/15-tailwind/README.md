@@ -1,11 +1,11 @@
 # Tailwind CSS
 
-**Status:** ⚪ Planned
+**Status:** 🟢 In progress
 
-Utility-first styling.
+Utility-first styling for the web app (v4, CSS-first config).
 
-Lessons are numbered markdown files added here as the matching
-part of the platform gets built (teach-as-you-build). If this folder
-only has a README so far, the code it teaches hasn't been written yet.
+## Lessons
+
+1. [What is Tailwind CSS?](01-what-is-tailwind.md)
 
 ← Back to the [curriculum index](../README.md)

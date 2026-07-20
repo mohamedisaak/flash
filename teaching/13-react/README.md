@@ -1,11 +1,13 @@
 # React
 
-**Status:** ⚪ Planned
+**Status:** 🟢 In progress
 
-Component model, props, state, hooks.
+The component model behind the web (and later mobile) apps.
 
-Lessons are numbered markdown files added here as the matching
-part of the platform gets built (teach-as-you-build). If this folder
-only has a README so far, the code it teaches hasn't been written yet.
+## Lessons
+
+1. [What is React?](01-what-is-react.md)
+2. [State & hooks](02-state-and-hooks.md)
+3. [Props & composition](03-props-and-composition.md)
 
 ← Back to the [curriculum index](../README.md)
