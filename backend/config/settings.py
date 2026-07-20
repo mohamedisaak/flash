@@ -50,6 +50,7 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",  # full-text search, array/JSON helpers
+    "django.contrib.sitemaps",  # sitemap.xml framework
 ]
 
 THIRD_PARTY_APPS = [
@@ -74,6 +75,8 @@ LOCAL_APPS = [
     "apps.notifications",
     "apps.comments",
     "apps.analytics",
+    "apps.seo",
+    "apps.search",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -326,3 +329,20 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=15, hour=0),  # daily at 00:15
     },
 }
+
+# ---------------------------------------------------------------------------
+# SEO & site identity  — see teaching/23-seo/
+# ---------------------------------------------------------------------------
+# Public canonical origin, used to build absolute URLs in sitemaps, feeds, and
+# JSON-LD (search engines require absolute URLs).
+SITE_URL = env("SITE_URL", default="http://localhost:8000")
+ORGANIZATION_NAME = env("ORGANIZATION_NAME", default="Flash News")
+ORGANIZATION_LOGO_URL = env("ORGANIZATION_LOGO_URL", default="")
+
+# ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+# Which search implementation to use. "postgres" uses PostgreSQL full-text
+# search (with a plain-lookup fallback on SQLite for local/dev). "opensearch"
+# selects the (deferred) OpenSearch backend behind the same interface.
+SEARCH_BACKEND = env("SEARCH_BACKEND", default="postgres")

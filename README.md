@@ -32,9 +32,11 @@ The build proceeds in phases (see [`PLAN.md`](PLAN.md)). **Done so far:**
 - ✅ **Phase 3** — Media & background processing: Celery + Redis, Pillow image
   renditions (WebP/AVIF), FFmpeg video pipeline, scheduled publishing +
   analytics rollups, pluggable storage (local → S3/MinIO), 26 tests.
+- ✅ **Phase 4** — SEO & search: sitemaps + Google News sitemap + robots.txt +
+  RSS, JSON-LD structured data, PostgreSQL full-text search with a pluggable
+  backend, 37 tests.
 
-Next up: **Phase 4** — SEO & search (sitemaps, structured data, full-text
-search).
+Next up: **Phase 5** — Next.js web frontend (public site + dashboards).
 
 ## Quick start (backend)
 

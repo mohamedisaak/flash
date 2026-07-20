@@ -25,7 +25,9 @@ monolith**: one Django app per bounded context under `apps/`.
 | `newsletters` | `NewsletterSubscriber` |
 | `notifications` | `Notification` (push / in-app / email) |
 | `comments` | Threaded `Comment` with moderation |
-| `analytics` | `PageView`, `SearchQueryLog` event store |
+| `analytics` | `PageView`, `SearchQueryLog`, `DailyStat` |
+| `seo` | Sitemaps, Google News sitemap, robots.txt, RSS, JSON-LD |
+| `search` | Full-text search + autocomplete (pluggable backend) |
 
 ## Quick start
 

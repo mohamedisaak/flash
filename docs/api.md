@@ -50,6 +50,19 @@ Authorization: Bearer <access token>
 | Notifications | `/notifications/` | owner-scoped; mark-read actions |
 | Newsletter | `/newsletter/subscribe/`, `/newsletter/unsubscribe/<token>/` | |
 | Analytics | `/analytics/pageview/` | public ingest beacon |
+| Search | `/search/?q=`, `/search/autocomplete/?q=` | ranked results + suggestions |
+| SEO / JSON-LD | `/seo/organization/`, `/seo/articles/<slug>/`, `/seo/videos/<slug>/` | schema.org structured data |
+
+## SEO endpoints outside the API
+
+Served at the site root (not under `/api/`), for search-engine crawlers:
+
+| URL | What |
+|-----|------|
+| `/sitemap.xml` | standard sitemap (articles, categories, videos, galleries) |
+| `/news-sitemap.xml` | Google News sitemap (last 48h) |
+| `/robots.txt` | crawler rules + sitemap pointers |
+| `/rss/`, `/rss/<category-slug>/` | RSS feeds |
 
 ## Conventions
 

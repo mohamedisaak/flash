@@ -25,4 +25,6 @@ urlpatterns = [
     # Feature endpoints
     path("newsletter/", include("apps.newsletters.urls")),
     path("analytics/", include("apps.analytics.urls")),
+    path("search/", include("apps.search.urls")),
+    path("seo/", include("apps.seo.urls")),
 ]

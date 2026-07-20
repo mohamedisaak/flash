@@ -227,8 +227,10 @@ is added phase by phase.
 - [x] Phase 3 — Media & background processing (Celery + Redis, Pillow image
       pipeline, FFmpeg video pipeline, scheduled publish + analytics rollup,
       storage abstraction, 26 passing tests, paired teaching lessons)
-- [ ] Phase 4 — SEO & search  ← next
-- [ ] Phase 5 — Web frontend
+- [x] Phase 4 — SEO & search (sitemaps + Google News + robots.txt + RSS,
+      JSON-LD structured data, Postgres full-text search w/ pluggable backend,
+      42 endpoints total, 37 passing tests, paired teaching lessons)
+- [ ] Phase 5 — Web frontend  ← next
 - [ ] Phase 6 — Mobile app
 - [ ] Phase 7 — Notifications & analytics
 - [ ] Phase 8 — DevOps, CI/CD, security, testing
@@ -293,9 +295,28 @@ This plan supersedes the earlier draft that was stored outside the repo at
 - Teaching: `08-redis/` (1 lesson) and `09-celery/` (5 lessons: intro, setup,
   image pipeline, video pipeline, periodic tasks).
 
-### Phase 4 — next up
+### Phase 4 — what shipped
 
-SEO & search: sitemaps (incl. Google News), robots.txt, RSS feeds, JSON-LD
-structured data (NewsArticle/Organization/BreadcrumbList/VideoObject),
-PostgreSQL full-text search (ranked + autocomplete), and an OpenSearch interface
-behind a flag — with paired lessons in `teaching/23-seo/`.
+- `apps/seo`: standard `sitemap.xml` (articles/categories/videos/galleries,
+  SITE_URL-based absolute URLs), Google News sitemap (`/news-sitemap.xml`, 48h
+  window, templated), `robots.txt`, RSS feeds (`/rss/`, `/rss/<category>/`).
+- JSON-LD structured data builders (NewsArticle, Organization, BreadcrumbList,
+  VideoObject) exposed via `/api/v1/seo/...` — `seo` depends on the content apps,
+  never the reverse (one-way dependency).
+- `apps/search`: pluggable `SearchBackend` interface; `PostgresSearchBackend`
+  (weighted full-text + `SearchRank`, `websearch` query type) with an
+  `icontains` fallback on SQLite; `OpenSearchBackend` stub behind
+  `SEARCH_BACKEND`. Endpoints `/api/v1/search/` (ranked, paginated, logs to
+  `SearchQueryLog`) and `/api/v1/search/autocomplete/`.
+- 42 API paths total; 37 tests (11 new: search visibility/logging/autocomplete/
+  backend-selection, sitemap host, news sitemap, robots, RSS, article + org
+  JSON-LD). Schema generates clean.
+- Teaching: `23-seo/` (5 lessons: foundations, structured data, sitemaps/robots,
+  RSS, search). Docs: `docs/api.md` updated.
+
+### Phase 5 — next up
+
+Web frontend (Next.js 16, App Router): public news site (SSR/SSG/ISR + dynamic
+metadata + embedded JSON-LD from the SEO endpoints), plus the editorial/admin and
+author dashboards — with paired lessons in `teaching/12-nextjs/`, `13-react/`,
+`14-typescript/`, `15-tailwind/`, `16-shadcn/`, `17-react-query/`.
