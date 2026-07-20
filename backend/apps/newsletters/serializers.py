@@ -5,6 +5,14 @@ from rest_framework import serializers
 from .models import NewsletterSubscriber
 
 
+class SubscriberSerializer(serializers.ModelSerializer):
+    """Read-only subscriber row for the admin's Subscribers list."""
+
+    class Meta:
+        model = NewsletterSubscriber
+        fields = ["id", "email", "is_confirmed", "is_active", "created_at"]
+
+
 class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsletterSubscriber

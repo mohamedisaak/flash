@@ -7,13 +7,16 @@ without login and can't be guessed for someone else.
 """
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import generics, status
+from rest_framework import generics, mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.permissions import IsEditorialStaff
+
 from .models import NewsletterSubscriber
-from .serializers import SubscribeSerializer
+from .serializers import SubscriberSerializer, SubscribeSerializer
 
 
 class SubscribeView(generics.CreateAPIView):
@@ -40,3 +43,23 @@ class UnsubscribeView(APIView):
         if not updated:
             return Response({"detail": "Invalid token."}, status=status.HTTP_404_NOT_FOUND)
         return Response({"status": "unsubscribed"})
+
+
+class SubscriberViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Staff-only list of subscribers + a 'send email to all' action.
+
+    Actual bulk email would enqueue a Celery task (Phase 7); here the action
+    reports how many active subscribers would receive it.
+    """
+
+    queryset = NewsletterSubscriber.objects.all().order_by("-created_at")
+    serializer_class = SubscriberSerializer
+    permission_classes = [IsEditorialStaff]
+    search_fields = ["email"]
+
+    @extend_schema(request=None, responses={200: OpenApiResponse(description="Bulk email queued.")})
+    @action(detail=False, methods=["post"], url_path="send-email")
+    def send_email(self, request):
+        count = NewsletterSubscriber.objects.filter(is_active=True).count()
+        # TODO(phase 7): enqueue a Celery task to actually send `subject`/`body`.
+        return Response({"status": "queued", "recipients": count})

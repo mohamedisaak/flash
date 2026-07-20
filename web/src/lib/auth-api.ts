@@ -93,9 +93,72 @@ export const authApi = {
   },
 
   async listCategories(): Promise<Category[]> {
-    const page = await json<Paginated<Category>>(await authFetch("/categories/"));
+    const page = await json<Paginated<Category>>(await authFetch("/categories/", { method: "GET" }));
     return page.results;
   },
 };
+
+/**
+ * A generic CRUD helper for any DRF collection at `/<path>/`. Returns typed
+ * list/get/create/update/remove functions so each admin section is a few lines.
+ * `uploadCreate`/`uploadUpdate` send multipart/form-data for file fields.
+ */
+export function resource<T extends { id: number }>(path: string) {
+  const base = `/${path}/`;
+  return {
+    async list(params: Record<string, string | number> = {}): Promise<T[]> {
+      const qs = new URLSearchParams(
+        Object.entries(params).map(([k, v]) => [k, String(v)]),
+      ).toString();
+      const page = await json<Paginated<T>>(await authFetch(`${base}?${qs}`, { method: "GET" }));
+      return page.results;
+    },
+    async listPaged(params: Record<string, string | number> = {}): Promise<Paginated<T>> {
+      const qs = new URLSearchParams(
+        Object.entries(params).map(([k, v]) => [k, String(v)]),
+      ).toString();
+      return json<Paginated<T>>(await authFetch(`${base}?${qs}`, { method: "GET" }));
+    },
+    async get(id: number | string): Promise<T> {
+      return json<T>(await authFetch(`${base}${id}/`, { method: "GET" }));
+    },
+    async create(payload: Record<string, unknown>): Promise<T> {
+      return json<T>(await authFetch(base, { method: "POST", body: JSON.stringify(payload) }));
+    },
+    async update(id: number | string, payload: Record<string, unknown>): Promise<T> {
+      return json<T>(await authFetch(`${base}${id}/`, { method: "PATCH", body: JSON.stringify(payload) }));
+    },
+    async remove(id: number | string): Promise<void> {
+      const res = await authFetch(`${base}${id}/`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) throw new Error(`Delete failed (${res.status})`);
+    },
+    /** Multipart create — pass a FormData with file + text fields. */
+    async uploadCreate(form: FormData): Promise<T> {
+      return json<T>(await authFetch(base, { method: "POST", body: form }));
+    },
+    async uploadUpdate(id: number | string, form: FormData): Promise<T> {
+      return json<T>(await authFetch(`${base}${id}/`, { method: "PATCH", body: form }));
+    },
+  };
+}
+
+/** Read/patch a singleton endpoint (e.g. site settings) that has no id. */
+export function singleton<T>(path: string) {
+  const base = `/${path}/`;
+  return {
+    async get(): Promise<T> {
+      return json<T>(await authFetch(base, { method: "GET" }));
+    },
+    async update(payload: Record<string, unknown> | FormData): Promise<T> {
+      const body = payload instanceof FormData ? payload : JSON.stringify(payload);
+      return json<T>(await authFetch(base, { method: "PATCH", body }));
+    },
+  };
+}
+
+/** POST a bare action endpoint (e.g. send-email, vote). */
+export async function postAction(path: string): Promise<unknown> {
+  return json<unknown>(await authFetch(path, { method: "POST", body: "{}" }));
+}
 
 export { AuthError };

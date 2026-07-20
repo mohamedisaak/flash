@@ -17,7 +17,84 @@ import { getAccessToken, useAuthStore } from "@/lib/auth-store";
 import { canPublish } from "@/lib/dashboard-types";
 import { env } from "@/lib/env";
 
-const NAV = [
+type NavLink = { href: string; label: string; icon?: string };
+type NavGroup = { label: string; icon: string; children: NavLink[] };
+type NavEntry = NavLink | NavGroup;
+
+const isGroup = (e: NavEntry): e is NavGroup => "children" in e;
+
+function NavLinkItem({ link, pathname }: { link: NavLink; pathname: string }) {
+  const active = pathname === link.href;
+  return (
+    <Link
+      href={link.href}
+      className={`mb-1 flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium transition ${
+        active ? "bg-brand/10 text-brand" : "text-gray-600 hover:bg-gray-50"
+      }`}
+    >
+      {link.icon && <span aria-hidden>{link.icon}</span>} {link.label}
+    </Link>
+  );
+}
+
+function NavGroupItem({ group, pathname }: { group: NavGroup; pathname: string }) {
+  const childActive = group.children.some((c) => pathname === c.href);
+  const [open, setOpen] = useState(childActive);
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+      >
+        <span aria-hidden>{group.icon}</span> {group.label}
+        <span className="ml-auto text-xs">{open ? "▾" : "▸"}</span>
+      </button>
+      {open && (
+        <div className="ml-4 border-l border-[var(--border)] pl-2">
+          {group.children.map((c) => (
+            <Link
+              key={c.href}
+              href={c.href}
+              className={`block rounded-md px-4 py-2 text-sm transition ${
+                pathname === c.href ? "text-brand font-medium" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {c.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Full admin navigation (editors/admins).
+const ADMIN_NAV: NavEntry[] = [
+  { href: "/dashboard", label: "Dashboard", icon: "🏠" },
+  { href: "/dashboard/settings", label: "Setting", icon: "⚙️" },
+  { href: "/dashboard/authors", label: "Author List", icon: "👥" },
+  { href: "/dashboard/ads", label: "Advertisements", icon: "📢" },
+  {
+    label: "News", icon: "🗞",
+    children: [
+      { href: "/dashboard/categories", label: "Categories" },
+      { href: "/dashboard/subcategories", label: "SubCategories" },
+      { href: "/dashboard/articles", label: "Posts" },
+    ],
+  },
+  { href: "/dashboard/photo-gallery", label: "Photo Gallery", icon: "🖼" },
+  { href: "/dashboard/video-gallery", label: "Video Gallery", icon: "🎬" },
+  { href: "/dashboard/pages", label: "Pages", icon: "📄" },
+  { href: "/dashboard/faqs", label: "FAQ Section", icon: "❓" },
+  { href: "/dashboard/languages", label: "Languages", icon: "🌐" },
+  { href: "/dashboard/subscribers", label: "Subscribers", icon: "📧" },
+  { href: "/dashboard/live-channels", label: "Live Channel", icon: "📡" },
+  { href: "/dashboard/polls", label: "Online Poll", icon: "🗳" },
+  { href: "/dashboard/social-items", label: "Social Items", icon: "🔗" },
+];
+
+// Author navigation (limited).
+const AUTHOR_NAV: NavEntry[] = [
   { href: "/dashboard", label: "Dashboard", icon: "🏠" },
   { href: "/dashboard/articles", label: "Posts", icon: "📰" },
   { href: "/dashboard/articles/new", label: "New Post", icon: "➕" },
@@ -53,28 +130,23 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const panelTitle = canPublish(user.role) ? "Admin Panel" : "Author Panel";
+  const isAdmin = canPublish(user.role);
+  const panelTitle = isAdmin ? "Admin Panel" : "Author Panel";
+  const nav = isAdmin ? ADMIN_NAV : AUTHOR_NAV;
 
   return (
     <div className="flex min-h-screen bg-[#f4f6fb]">
       {/* Sidebar */}
-      <aside className="hidden w-60 shrink-0 flex-col bg-white shadow-sm md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col overflow-y-auto bg-white shadow-sm md:flex">
         <div className="px-6 py-5 text-xl font-extrabold">{panelTitle}</div>
-        <nav className="flex-1 px-2">
-          {NAV.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`mb-1 flex items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium transition ${
-                  active ? "bg-brand/10 text-brand" : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <span aria-hidden>{item.icon}</span> {item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 px-2 pb-6">
+          {nav.map((entry) =>
+            isGroup(entry) ? (
+              <NavGroupItem key={entry.label} group={entry} pathname={pathname} />
+            ) : (
+              <NavLinkItem key={entry.href} link={entry} pathname={pathname} />
+            ),
+          )}
         </nav>
       </aside>
 
@@ -105,6 +177,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <div className="px-4 py-2 text-xs capitalize text-[var(--muted)]">
                     {user.role.replace(/_/g, " ")}
                   </div>
+                  <Link
+                    href="/dashboard/edit-profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                  >
+                    👤 Edit Profile
+                  </Link>
                   <button
                     onClick={() => {
                       setMenuOpen(false);

@@ -25,6 +25,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "description"]
     ordering_fields = ["order", "name", "created_at"]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # ?level=top → only top-level sections; ?level=sub → only subcategories.
+        level = self.request.query_params.get("level")
+        if level == "top":
+            return qs.filter(parent__isnull=True)
+        if level == "sub":
+            return qs.filter(parent__isnull=False)
+        return qs
+
 
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()

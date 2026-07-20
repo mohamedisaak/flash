@@ -333,6 +333,19 @@ This plan supersedes the earlier draft that was stored outside the repo at
 - Teaching: `12-nextjs/` (6 lessons), `13-react/` (3), `14-typescript/` (2),
   `15-tailwind/` (1), `16-shadcn/` (1), `17-react-query/` (2).
 
+### Phase 5c — full CMS admin (added on request)
+
+Backend `apps/cms` (SiteSetting singleton, SocialItem, LiveChannel, FAQ,
+StaticPage, Poll, Language) + staff APIs for author management
+(`/users/`), subscribers (`/newsletter/subscribers/` + send-email), and a
+dashboard `/stats/` endpoint. Frontend: a full grouped admin sidebar
+(Dashboard, Setting, Author List, Advertisements, News▸Categories/
+SubCategories/Posts, Photo/Video Gallery, Pages, FAQ, Languages, Subscribers,
+Live Channel, Online Poll, Social Items, Edit Profile), driven by a
+config-driven `CrudSection` (list + add/edit modal + delete, JSON or multipart
+upload) so each section is a few lines. Dashboard shows platform-wide stat
+tiles. 61 API paths; 37 backend tests pass; web build clean (26 routes).
+
 ### Phase 5b — what shipped (dashboards)
 
 - Auth: Zustand session store + token helpers (`auth-store.ts`); authenticated

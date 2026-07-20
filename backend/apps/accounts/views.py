@@ -6,9 +6,12 @@ Login/refresh are handled by simplejwt's built-in views, wired in urls.py. See
 """
 
 from django.contrib.auth import get_user_model
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, viewsets
 
-from .serializers import RegisterSerializer, UserSerializer
+from apps.common.permissions import IsEditorialStaff
+
+from .models import Role
+from .serializers import AdminUserSerializer, RegisterSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -36,3 +39,20 @@ class MeView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """Staff-only user management (the admin's "Author List").
+
+    Editors/admins can list, create, edit and remove newsroom accounts. Defaults
+    the ``role`` to Author when creating (the admin form can override it).
+    """
+
+    queryset = User.objects.all().order_by("-date_joined")
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsEditorialStaff]
+    filterset_fields = ["role", "status"]
+    search_fields = ["username", "email", "first_name", "last_name"]
+
+    def perform_create(self, serializer):
+        serializer.save(role=serializer.validated_data.get("role", Role.AUTHOR))

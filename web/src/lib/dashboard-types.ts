@@ -38,6 +38,35 @@ export const ARTICLE_STATUSES = [
   { value: "archived", label: "Archived" },
 ] as const;
 
+export const ROLE_OPTIONS = [
+  { value: "super_admin", label: "Super Admin" },
+  { value: "admin", label: "Admin" },
+  { value: "editor_in_chief", label: "Editor in Chief" },
+  { value: "managing_editor", label: "Managing Editor" },
+  { value: "section_editor", label: "Section Editor" },
+  { value: "journalist", label: "Journalist" },
+  { value: "author", label: "Author" },
+  { value: "photographer", label: "Photographer" },
+  { value: "video_editor", label: "Video Editor" },
+  { value: "moderator", label: "Moderator" },
+  { value: "subscriber", label: "Subscriber" },
+];
+
+export const USER_STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "pending", label: "Pending" },
+  { value: "suspended", label: "Suspended" },
+  { value: "banned", label: "Banned" },
+];
+
+export const AD_PLACEMENTS = [
+  { value: "header", label: "Header" },
+  { value: "sidebar", label: "Sidebar" },
+  { value: "in_content", label: "In-content" },
+  { value: "mobile", label: "Mobile" },
+  { value: "popup", label: "Popup" },
+];
+
 /** Payload for creating/updating an article (write-side field names). */
 export interface ArticleWritePayload {
   title: string;
