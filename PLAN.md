@@ -224,8 +224,10 @@ is added phase by phase.
       admin, ERD, paired teaching lessons)
 - [x] Phase 2 — Backend core (DRF API: JWT auth, RBAC, 37 endpoints, OpenAPI
       docs, throttling, audit log, 16 passing tests, paired teaching lessons)
-- [ ] Phase 3 — Media & background processing
-- [ ] Phase 4 — SEO & search
+- [x] Phase 3 — Media & background processing (Celery + Redis, Pillow image
+      pipeline, FFmpeg video pipeline, scheduled publish + analytics rollup,
+      storage abstraction, 26 passing tests, paired teaching lessons)
+- [ ] Phase 4 — SEO & search  ← next
 - [ ] Phase 5 — Web frontend
 - [ ] Phase 6 — Mobile app
 - [ ] Phase 7 — Notifications & analytics
@@ -272,10 +274,28 @@ This plan supersedes the earlier draft that was stored outside the repo at
 - Docs: `docs/api.md`. Teaching: `06-django-rest-framework/` (5 lessons),
   `10-api-design/` (4 lessons), `11-authentication/` (JWT + permissions).
 
-### Phase 3 — next up
+### Phase 3 — what shipped
 
-Media & background processing: storage abstraction (local → MinIO/S3), Pillow
-image pipeline (variants, WebP/AVIF), FFmpeg video pipeline (thumbnails, HLS),
-Celery + Redis broker + beat schedule (scheduled publish, RSS/sitemap regen,
-analytics rollups) — with paired lessons in `teaching/08-redis/`,
-`teaching/09-celery/`.
+- Celery app (`config/celery.py`, loaded via `config/__init__.py`) + `CELERY_*`
+  settings and a `CELERY_BEAT_SCHEDULE`; Redis broker/result backend.
+- `apps/media`: `ImageRendition` model + Pillow service generating responsive
+  renditions (thumbnail/small/medium/large × WebP/AVIF, never upscaling,
+  EXIF-aware) + a thin `@shared_task` wrapper + admin.
+- `apps/videos`: FFmpeg service (probe duration, thumbnail, HLS transcode) +
+  `process_video` task that degrades gracefully when ffmpeg is absent.
+- Periodic tasks: `articles.publish_scheduled_articles` (every minute) and
+  `analytics.aggregate_daily_analytics` → new `DailyStat` summary model (raw
+  events → summary tables, idempotent).
+- Storage abstraction via Django `STORAGES`: local disk by default, S3/MinIO
+  when `USE_S3=True` (optional `s3` dependency extra).
+- 26 pytest tests (10 new: image pipeline, video guard, scheduled publish,
+  analytics rollup), all with Celery eager — no worker/broker needed in CI.
+- Teaching: `08-redis/` (1 lesson) and `09-celery/` (5 lessons: intro, setup,
+  image pipeline, video pipeline, periodic tasks).
+
+### Phase 4 — next up
+
+SEO & search: sitemaps (incl. Google News), robots.txt, RSS feeds, JSON-LD
+structured data (NewsArticle/Organization/BreadcrumbList/VideoObject),
+PostgreSQL full-text search (ranked + autocomplete), and an OpenSearch interface
+behind a flag — with paired lessons in `teaching/23-seo/`.

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PageView, SearchQueryLog
+from .models import DailyStat, PageView, SearchQueryLog
 
 
 @admin.register(PageView)
@@ -16,3 +16,10 @@ class SearchQueryLogAdmin(admin.ModelAdmin):
     list_display = ("query", "results_count", "created_at")
     search_fields = ("query",)
     date_hierarchy = "created_at"
+
+
+@admin.register(DailyStat)
+class DailyStatAdmin(admin.ModelAdmin):
+    list_display = ("date", "pageviews", "unique_sessions", "avg_read_seconds")
+    date_hierarchy = "date"
+    readonly_fields = ("date", "pageviews", "unique_sessions", "avg_read_seconds")

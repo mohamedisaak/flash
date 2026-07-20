@@ -20,6 +20,19 @@ def _allow_testserver(settings):
         settings.ALLOWED_HOSTS = list(settings.ALLOWED_HOSTS) + ["testserver"]
 
 
+@pytest.fixture(autouse=True)
+def _celery_eager(settings):
+    """Run Celery tasks synchronously in tests — no worker/broker required."""
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+
+
+@pytest.fixture(autouse=True)
+def _isolated_media_root(settings, tmp_path_factory):
+    """Point uploads at a throwaway dir so tests never write into backend/media/."""
+    settings.MEDIA_ROOT = str(tmp_path_factory.mktemp("media"))
+
+
 @pytest.fixture
 def api():
     return APIClient()

@@ -29,9 +29,12 @@ The build proceeds in phases (see [`PLAN.md`](PLAN.md)). **Done so far:**
   layer, migrations, admin, ERD, and paired teaching lessons.
 - ✅ **Phase 2** — DRF REST API: JWT auth, RBAC permissions, 37 endpoints under
   `/api/v1/`, OpenAPI/Swagger docs, throttling, audit logging, and 16 tests.
+- ✅ **Phase 3** — Media & background processing: Celery + Redis, Pillow image
+  renditions (WebP/AVIF), FFmpeg video pipeline, scheduled publishing +
+  analytics rollups, pluggable storage (local → S3/MinIO), 26 tests.
 
-Next up: **Phase 3** — media pipeline & background processing (Pillow, FFmpeg,
-Celery).
+Next up: **Phase 4** — SEO & search (sitemaps, structured data, full-text
+search).
 
 ## Quick start (backend)
 

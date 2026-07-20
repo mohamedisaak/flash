@@ -53,3 +53,24 @@ class SearchQueryLog(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.query
+
+
+class DailyStat(TimeStampedModel):
+    """A per-day rollup of the raw ``PageView`` events.
+
+    The raw events table is huge and append-only; querying it live for a
+    dashboard would be slow. A nightly Celery task summarizes each day into one
+    row here, so the analytics dashboard reads pre-computed numbers instead. This
+    is the classic **raw events → summary tables** pattern.
+    """
+
+    date = models.DateField(unique=True, db_index=True)
+    pageviews = models.PositiveIntegerField(default=0)
+    unique_sessions = models.PositiveIntegerField(default=0)
+    avg_read_seconds = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ("-date",)
+
+    def __str__(self) -> str:
+        return f"{self.date}: {self.pageviews} views"

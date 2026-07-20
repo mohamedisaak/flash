@@ -20,6 +20,7 @@ monolith**: one Django app per bounded context under `apps/`.
 | `livecoverage` | `LiveBlog` + `LiveBlogUpdate` real-time posts |
 | `videos` | `Video` news items |
 | `galleries` | `PhotoGallery` + `GalleryImage` |
+| `media` | `ImageRendition` + Pillow image pipeline (responsive WebP/AVIF) |
 | `ads` | `Advertisement` with impression/click tracking |
 | `newsletters` | `NewsletterSubscriber` |
 | `notifications` | `Notification` (push / in-app / email) |
@@ -45,6 +46,19 @@ cp .env.example .env                       # DATABASE_URL/REDIS_URL point at Doc
 uv run python manage.py migrate
 uv run python manage.py runserver
 ```
+
+## Background tasks (Celery)
+
+Slow/scheduled work (image renditions, video transcoding, scheduled publishing,
+analytics rollups) runs on Celery workers, brokered by Redis.
+
+```bash
+# needs Redis (docker compose ... up -d)
+uv run celery -A config worker -l info    # runs queued tasks
+uv run celery -A config beat -l info      # enqueues periodic tasks on schedule
+```
+
+In tests, `CELERY_TASK_ALWAYS_EAGER` runs tasks inline — no worker/Redis needed.
 
 ## Tests
 

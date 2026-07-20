@@ -13,6 +13,7 @@ dependencies = [
     "djangorestframework-simplejwt>=5.5",
     "django-filter>=25.1",
     "drf-spectacular>=0.28",
+    "celery[redis]>=5.4",
 ]
 
 [dependency-groups]
@@ -21,6 +22,14 @@ dev = [
     "pytest>=8.0",
     "pytest-django>=4.9",
     "factory-boy>=3.3",
+]
+
+# Optional: S3/MinIO-compatible object storage for media in production.
+# Enable with `uv sync --extra s3` and set USE_S3=True (see .env.example).
+[project.optional-dependencies]
+s3 = [
+    "django-storages>=1.14",
+    "boto3>=1.35",
 ]
 
 [tool.pytest.ini_options]

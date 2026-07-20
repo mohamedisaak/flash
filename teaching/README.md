@@ -47,6 +47,7 @@ technology it uses.
 - 🟢 **In progress** — has real lessons matching code already built.
 - ⚪ **Planned** — folder scaffolded; lessons arrive when that phase is built.
 
-Currently in progress (Phases 0–2): **05 Django**, **06 Django REST
-Framework**, **10 API Design**, **11 Authentication**, **25 Docker**,
-**29 System Design**, **30 Database Design**, **38 Glossary**.
+Currently in progress (Phases 0–3): **05 Django**, **06 Django REST
+Framework**, **08 Redis**, **09 Celery**, **10 API Design**,
+**11 Authentication**, **25 Docker**, **29 System Design**,
+**30 Database Design**, **38 Glossary**.

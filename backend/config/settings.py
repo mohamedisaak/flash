@@ -68,6 +68,7 @@ LOCAL_APPS = [
     "apps.livecoverage",
     "apps.videos",
     "apps.galleries",
+    "apps.media",
     "apps.ads",
     "apps.newsletters",
     "apps.notifications",
@@ -168,13 +169,39 @@ USE_I18N = True
 USE_TZ = True
 
 # ---------------------------------------------------------------------------
-# Static & media files
+# Static & media files (with a pluggable storage backend)
 # ---------------------------------------------------------------------------
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Django's STORAGES abstraction lets us swap where uploaded files live without
+# touching model code. Default: local disk. Set USE_S3=True (and `uv sync
+# --extra s3`) to store media in any S3-compatible service, including MinIO.
+# See teaching/25-docker/ and apps/media/.
+USE_S3 = env.bool("USE_S3", default=False)
+if USE_S3:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "bucket_name": env("S3_BUCKET", default="flash-media"),
+                "endpoint_url": env("S3_ENDPOINT_URL", default=None),  # MinIO URL
+                "access_key": env("S3_ACCESS_KEY", default=""),
+                "secret_key": env("S3_SECRET_KEY", default=""),
+                "region_name": env("S3_REGION", default=""),
+                "file_overwrite": False,
+            },
+        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+else:
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -262,5 +289,40 @@ LOGGING = {
     },
     "loggers": {
         "flash.audit": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Celery (background tasks & scheduling)  — see teaching/09-celery/
+# ---------------------------------------------------------------------------
+# Broker = the queue tasks are pushed onto (Redis). Result backend = where task
+# return values/status are stored. Both default to Redis; both reuse REDIS_URL's
+# host if a dedicated URL isn't given.
+_redis_default = REDIS_URL or "redis://localhost:6379/0"
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=_redis_default)
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=_redis_default)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+# When True, tasks run synchronously in-process (no worker/broker needed).
+# Tests turn this on; never enable it in production.
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+
+# Periodic tasks run by `celery -A config beat`. Each entry names a task and how
+# often to run it. See the app's tasks.py for what each does.
+from celery.schedules import crontab  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = {
+    "publish-scheduled-articles": {
+        # Flip scheduled articles live the moment their time arrives.
+        "task": "apps.articles.tasks.publish_scheduled_articles",
+        "schedule": 60.0,  # every minute
+    },
+    "aggregate-daily-analytics": {
+        # Roll raw pageviews up into per-day summary rows.
+        "task": "apps.analytics.tasks.aggregate_daily_analytics",
+        "schedule": crontab(minute=15, hour=0),  # daily at 00:15
     },
 }
