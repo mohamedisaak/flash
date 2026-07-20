@@ -3,17 +3,18 @@
 The public news website, built with **Next.js 16 (App Router)**, React 19,
 TypeScript, Tailwind CSS v4, and TanStack Query. It consumes the Django REST API.
 
-> **Scope:** Phase 5 delivers the **public site** (home, article, category,
-> search) — the SEO-critical surface. The editorial/admin and author dashboards
-> are a follow-on (Phase 5b). See [`../PLAN.md`](../PLAN.md).
+Includes both the **public site** and the **editorial/author dashboards**.
 
 ## Stack
 
 - Next.js 16 App Router · React 19 · TypeScript 5
 - Tailwind CSS v4 (CSS-first config) + shadcn-style owned components
-- TanStack Query (client-side data for search)
+- TanStack Query (client data) · Zustand (auth session)
+- React Hook Form + Zod (forms) · Tiptap (rich-text editor)
 
 ## Pages
+
+**Public site**
 
 | Route | Rendering | Notes |
 |-------|-----------|-------|
@@ -21,6 +22,15 @@ TypeScript, Tailwind CSS v4, and TanStack Query. It consumes the Django REST API
 | `/articles/[slug]` | ISR (300s) | `generateMetadata` + JSON-LD (NewsArticle) |
 | `/[category]` | ISR (120s) | section pages, matches backend sitemap `/{slug}` |
 | `/search?q=` | client (TanStack Query) | `noindex`; hits `/api/v1/search/` |
+
+**Dashboard** (JWT-authenticated, `noindex`)
+
+| Route | Purpose |
+|-------|---------|
+| `/dashboard/login` | JWT sign-in |
+| `/dashboard` | overview: stat tiles + recent articles |
+| `/dashboard/articles` | manage articles (role-scoped) |
+| `/dashboard/articles/new` · `/dashboard/articles/[slug]/edit` | create/edit with Tiptap + RHF + Zod |
 
 ## Getting started
 

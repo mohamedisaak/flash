@@ -13,7 +13,7 @@ part of the codebase is explained, from beginner level up, in
 
 ```text
 backend/         Django + DRF modular monolith (the API & data layer)
-web/             Next.js public site (done) + dashboards (Phase 5b)
+web/             Next.js public site + editorial/author dashboards
 mobile/          Expo / React Native app                        (Phase 6)
 infrastructure/  Docker Compose, Nginx, CI configs
 docs/            Architecture, ERD, and reference documentation
@@ -35,12 +35,12 @@ The build proceeds in phases (see [`PLAN.md`](PLAN.md)). **Done so far:**
 - ✅ **Phase 4** — SEO & search: sitemaps + Google News sitemap + robots.txt +
   RSS, JSON-LD structured data, PostgreSQL full-text search with a pluggable
   backend, 37 tests.
-- 🟡 **Phase 5** — Web frontend (public site): Next.js 16 App Router with
-  home/article/category/search, SSR/ISR, dynamic metadata + embedded JSON-LD,
-  typed API client, Tailwind v4, TanStack Query. Builds clean. *(Admin + author
-  dashboards remain — Phase 5b.)*
+- ✅ **Phase 5** — Web frontend: public site (home/article/category/search,
+  SSR/ISR, metadata + JSON-LD) **and** the editorial/author dashboards (Phase 5b:
+  JWT login, role-gated shell, article CRUD with Tiptap + React Hook Form + Zod,
+  scheduling, overview stats). Builds clean.
 
-Next up: **Phase 5b** — editorial/admin & author dashboards.
+Next up: **Phase 6** — Expo / React Native mobile app.
 
 ## Quick start (backend)
 

@@ -50,5 +50,6 @@ technology it uses.
 Currently in progress (Phases 0–5): **05 Django**, **06 Django REST
 Framework**, **08 Redis**, **09 Celery**, **10 API Design**,
 **11 Authentication**, **12 Next.js**, **13 React**, **14 TypeScript**,
-**15 Tailwind**, **16 shadcn/ui**, **17 TanStack Query**, **23 SEO**,
-**25 Docker**, **29 System Design**, **30 Database Design**, **38 Glossary**.
+**15 Tailwind**, **16 shadcn/ui**, **17 TanStack Query**, **18 Zustand**,
+**23 SEO**, **25 Docker**, **29 System Design**, **30 Database Design**,
+**38 Glossary**.

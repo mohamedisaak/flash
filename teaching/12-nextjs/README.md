@@ -13,6 +13,7 @@ Server Components, rendering strategies, metadata, and routing.
 4. [Rendering strategies: SSR, SSG, ISR](04-rendering-strategies.md)
 5. [Metadata, JSON-LD & images](05-images-and-metadata.md)
 6. [Routing & params](06-routing-and-params.md)
+7. [The dashboard: auth, protected routes & forms](07-dashboard-and-forms.md)
 
 ## Related
 

@@ -230,11 +230,11 @@ is added phase by phase.
 - [x] Phase 4 — SEO & search (sitemaps + Google News + robots.txt + RSS,
       JSON-LD structured data, Postgres full-text search w/ pluggable backend,
       42 endpoints total, 37 passing tests, paired teaching lessons)
-- [~] Phase 5 — Web frontend — **public site done** (Next.js 16 App Router:
-      home/article/category/search, SSR/ISR, dynamic metadata + JSON-LD, typed
-      API client, Tailwind v4, TanStack Query; builds clean). Admin + author
-      dashboards remain (Phase 5b).
-- [ ] Phase 6 — Mobile app
+- [x] Phase 5 — Web frontend — public site (home/article/category/search,
+      SSR/ISR, metadata + JSON-LD) **and** dashboards (Phase 5b: JWT login,
+      role-gated shell, article CRUD with Tiptap + RHF + Zod, scheduling,
+      overview stats). Builds clean (typecheck + next build).
+- [ ] Phase 6 — Mobile app  ← next
 - [ ] Phase 7 — Notifications & analytics
 - [ ] Phase 8 — DevOps, CI/CD, security, testing
 
@@ -333,13 +333,23 @@ This plan supersedes the earlier draft that was stored outside the repo at
 - Teaching: `12-nextjs/` (6 lessons), `13-react/` (3), `14-typescript/` (2),
   `15-tailwind/` (1), `16-shadcn/` (1), `17-react-query/` (2).
 
-### Phase 5b — next up
+### Phase 5b — what shipped (dashboards)
 
-Editorial/Admin dashboard + Author dashboard (authenticated Next.js app area:
-login via JWT, article CRUD with the Tiptap editor, drafts/scheduling,
-role-gated views, analytics widgets) — reusing the same API client and adding
-React Hook Form + Zod for forms.
+- Auth: Zustand session store + token helpers (`auth-store.ts`); authenticated
+  fetch client with transparent 401→refresh→retry (`auth-api.ts`).
+- Route structure: `app/dashboard/` with a `noindex` layout; a `(app)` route
+  group gated by `DashboardShell` (loads `/auth/me`, redirects anonymous users);
+  `login/` outside the group.
+- Article management: role-scoped list (authors see own via `?author=`, editors
+  see all), overview with stat tiles (counts by status) + recents, create/edit
+  form with **React Hook Form + Zod** validation and a **Tiptap** rich-text
+  editor; status + scheduled-publish datetime mapped to the API payload.
+- Verified: `pnpm typecheck` + `pnpm build` pass (8 routes incl. the dashboard).
+- Teaching: `18-zustand/` (1 lesson) + `12-nextjs/07-dashboard-and-forms.md`.
 
-### Phase 6 — after that
+### Phase 6 — next up
 
-Mobile app (Expo / React Native) — see the roadmap above.
+Mobile app (Expo / React Native + Expo Router): home, categories, search,
+bookmarks, notifications, breaking/live/video, offline reading — reusing the DRF
+API — with paired lessons in `teaching/19-react-native/`, `20-expo/`,
+`21-nativewind/`, `22-mobile-architecture/`.
