@@ -32,24 +32,28 @@ export default function EditArticlePage({ params }: { params: Promise<{ slug: st
   if (isPending || !article) return <p className="text-[var(--muted)]">Loading article…</p>;
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="mb-4 text-2xl font-extrabold">Edit article</h1>
-      <ArticleForm
-        categories={categories ?? []}
-        defaultValues={{
-          title: article.title,
-          subtitle: article.subtitle,
-          excerpt: article.excerpt,
-          content: article.content,
-          category_id: article.category.id,
-          status: article.status,
-          published_at: isoToLocalInput(article.published_at),
-        }}
-        onSubmit={(v) => mutation.mutate(v)}
-        submitting={mutation.isPending}
-        serverError={mutation.error instanceof Error ? mutation.error.message : undefined}
-        submitLabel="Save changes"
-      />
+    <div>
+      <div className="mb-6 rounded-lg bg-white px-6 py-5 shadow-sm">
+        <h1 className="text-2xl font-extrabold">Edit Post</h1>
+      </div>
+      <div className="max-w-3xl rounded-lg bg-white p-6 shadow-sm">
+        <ArticleForm
+          categories={categories ?? []}
+          defaultValues={{
+            title: article.title,
+            subtitle: article.subtitle,
+            excerpt: article.excerpt,
+            content: article.content,
+            category_id: article.category.id,
+            status: article.status,
+            published_at: isoToLocalInput(article.published_at),
+          }}
+          onSubmit={(v) => mutation.mutate(v)}
+          submitting={mutation.isPending}
+          serverError={mutation.error instanceof Error ? mutation.error.message : undefined}
+          submitLabel="Save changes"
+        />
+      </div>
     </div>
   );
 }

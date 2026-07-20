@@ -13,7 +13,15 @@
  * teaching/17-react-query/ (client-side fetching).
  */
 import { env } from "./env";
-import type { Article, ArticleListItem, Category, Paginated } from "./types";
+import type {
+  Article,
+  ArticleListItem,
+  Category,
+  Paginated,
+  PhotoGallery,
+  Tag,
+  Video,
+} from "./types";
 
 interface FetchOptions {
   /** ISR window in seconds. 0 = always dynamic (SSR). */
@@ -73,5 +81,42 @@ export const api = {
   /** JSON-LD for an article, built server-side by the backend's SEO app. */
   async getArticleJsonLd(slug: string): Promise<Record<string, unknown> | null> {
     return getJson<Record<string, unknown>>(`/seo/articles/${slug}/`, { revalidate: 300 });
+  },
+
+  /** Most-viewed articles (for the "Popular" sidebar widget). */
+  async listPopular(limit = 5): Promise<ArticleListItem[]> {
+    const page = await getJson<Paginated<ArticleListItem>>("/articles/", {
+      revalidate: 300,
+      searchParams: { ordering: "-views", page_size: limit },
+    });
+    return page?.results ?? [];
+  },
+
+  async listTags(): Promise<Tag[]> {
+    const page = await getJson<Paginated<Tag>>("/tags/", { revalidate: 3600, searchParams: { page_size: 40 } });
+    return page?.results ?? [];
+  },
+
+  async articlesByAuthor(authorId: number): Promise<Paginated<ArticleListItem>> {
+    return (
+      (await getJson<Paginated<ArticleListItem>>("/articles/", {
+        revalidate: 120,
+        searchParams: { author: authorId, page_size: 24 },
+      })) ?? EMPTY_PAGE
+    );
+  },
+
+  async listVideos(): Promise<Video[]> {
+    const page = await getJson<Paginated<Video>>("/videos/", { revalidate: 300, searchParams: { page_size: 12 } });
+    return page?.results ?? [];
+  },
+
+  async listGalleries(): Promise<PhotoGallery[]> {
+    const page = await getJson<Paginated<PhotoGallery>>("/galleries/", { revalidate: 300, searchParams: { page_size: 24 } });
+    return page?.results ?? [];
+  },
+
+  async getGallery(slug: string): Promise<PhotoGallery | null> {
+    return getJson<PhotoGallery>(`/galleries/${slug}/`, { revalidate: 300 });
   },
 };

@@ -1,10 +1,9 @@
 "use client";
 
 /**
- * Dashboard overview: stat tiles (counts by status) + recent articles.
- *
- * Data is fetched client-side with TanStack Query through the authenticated API
- * client. Authors see only their own articles (?author=<id>); editors see all.
+ * Dashboard overview: a white page-header card, colored stat tiles, and a
+ * recent-articles card. Data via TanStack Query through the authed API.
+ * Authors see only their own articles; editors see all.
  */
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -13,18 +12,28 @@ import { useAuthStore } from "@/lib/auth-store";
 import { canPublish } from "@/lib/dashboard-types";
 import { formatDate } from "@/lib/utils";
 
-function StatTile({ label, value }: { label: string; value: number | string }) {
+function PageHeader({ title }: { title: string }) {
   return (
-    <div className="rounded-lg border border-[var(--border)] p-4">
-      <p className="text-2xl font-extrabold">{value}</p>
-      <p className="text-xs uppercase tracking-wide text-[var(--muted)]">{label}</p>
+    <div className="mb-6 rounded-lg bg-white px-6 py-5 shadow-sm">
+      <h1 className="text-2xl font-extrabold">{title}</h1>
+    </div>
+  );
+}
+
+function StatTile({ label, value, color }: { label: string; value: number | string; color: string }) {
+  return (
+    <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm">
+      <div className={`flex h-16 w-16 items-center justify-center rounded-md text-2xl text-white ${color}`}>📰</div>
+      <div>
+        <p className="text-sm text-[var(--muted)]">{label}</p>
+        <p className="text-2xl font-extrabold">{value}</p>
+      </div>
     </div>
   );
 }
 
 export default function OverviewPage() {
   const user = useAuthStore((s) => s.user);
-  // Non-publishers (authors/journalists) only see their own work.
   const scope: Record<string, number> = user && !canPublish(user.role) ? { author: user.id } : {};
 
   const { data, isPending } = useQuery({
@@ -37,42 +46,42 @@ export default function OverviewPage() {
   const byStatus = (s: string) => articles.filter((a) => a.status === s).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Overview</h1>
-        <Link href="/dashboard/articles/new" className="text-sm font-medium text-brand hover:underline">
-          + New article
-        </Link>
-      </div>
+    <div>
+      <PageHeader title="Dashboard" />
 
       {isPending ? (
         <p className="text-[var(--muted)]">Loading…</p>
       ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile label="Total" value={data?.count ?? 0} />
-            <StatTile label="Published" value={byStatus("published")} />
-            <StatTile label="Drafts" value={byStatus("draft")} />
-            <StatTile label="Scheduled" value={byStatus("scheduled")} />
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatTile label="Total Posts" value={data?.count ?? 0} color="bg-brand" />
+            <StatTile label="Published" value={byStatus("published")} color="bg-accent" />
+            <StatTile label="Drafts" value={byStatus("draft")} color="bg-amber-500" />
+            <StatTile label="Scheduled" value={byStatus("scheduled")} color="bg-rose-500" />
           </div>
 
-          <section>
-            <h2 className="mb-2 text-lg font-bold">Recent</h2>
+          <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Recent Posts</h2>
+              <Link href="/dashboard/articles/new" className="text-sm font-medium text-brand hover:underline">
+                + New Post
+              </Link>
+            </div>
             <ul className="divide-y divide-[var(--border)]">
               {articles.slice(0, 8).map((a) => (
                 <li key={a.id} className="flex items-center justify-between py-2 text-sm">
-                  <Link href={`/dashboard/articles/${a.slug}/edit`} className="font-medium hover:underline">
+                  <Link href={`/dashboard/articles/${a.slug}/edit`} className="font-medium hover:text-brand">
                     {a.title}
                   </Link>
-                  <span className="text-xs text-[var(--muted)] capitalize">
+                  <span className="text-xs capitalize text-[var(--muted)]">
                     {a.status} · {formatDate(a.published_at) || "—"}
                   </span>
                 </li>
               ))}
-              {articles.length === 0 && <li className="py-2 text-sm text-[var(--muted)]">No articles yet.</li>}
+              {articles.length === 0 && <li className="py-2 text-sm text-[var(--muted)]">No posts yet.</li>}
             </ul>
-          </section>
-        </>
+          </div>
+        </div>
       )}
     </div>
   );

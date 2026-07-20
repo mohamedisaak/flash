@@ -1,17 +1,14 @@
 "use client";
 
 /**
- * Dashboard login. Exchanges username+password for JWTs (stored by authApi),
- * loads the current user into the auth store, then redirects into the dashboard.
- * Sits outside the `(app)` route group, so it isn't gated.
+ * Dashboard login card (NewsPortal "Admin Panel Login" style). Exchanges
+ * username+password for JWTs, loads the user, then enters the dashboard.
+ * Outside the (app) route group, so it isn't gated.
  */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authApi } from "@/lib/auth-api";
 import { useAuthStore } from "@/lib/auth-store";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Field } from "@/components/ui/field";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,21 +33,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm py-12">
-      <h1 className="mb-1 text-2xl font-extrabold">Newsroom sign in</h1>
-      <p className="mb-6 text-sm text-[var(--muted)]">Editors, journalists and authors.</p>
-      <form onSubmit={submit} className="space-y-4">
-        <Field label="Username" htmlFor="username">
-          <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-        </Field>
-        <Field label="Password" htmlFor="password">
-          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-        </Field>
-        {error && <p className="text-sm text-brand">{error}</p>}
-        <Button type="submit" disabled={busy} className="w-full">
-          {busy ? "Signing in…" : "Sign in"}
-        </Button>
-      </form>
+    <div className="flex min-h-screen items-center justify-center bg-[#f4f6fb] px-4">
+      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow">
+        <h1 className="mb-6 text-center text-2xl font-extrabold text-brand">Admin Panel Login</h1>
+        <form onSubmit={submit} className="space-y-4">
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
+            autoComplete="username"
+            className="w-full rounded-md border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-brand"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            autoComplete="current-password"
+            className="w-full rounded-md border border-[var(--border)] px-4 py-3 text-sm outline-none focus:border-brand"
+          />
+          {error && <p className="text-sm text-rose-500">{error}</p>}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-md bg-brand py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
+          >
+            {busy ? "Signing in…" : "Login"}
+          </button>
+          <p className="text-center text-sm text-brand">Forget Password?</p>
+        </form>
+      </div>
     </div>
   );
 }

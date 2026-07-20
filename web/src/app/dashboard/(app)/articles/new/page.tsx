@@ -17,16 +17,20 @@ export default function NewArticlePage() {
   });
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="mb-4 text-2xl font-extrabold">New article</h1>
-      <ArticleForm
-        categories={categories ?? []}
-        defaultValues={{}}
-        onSubmit={(v) => mutation.mutate(v)}
-        submitting={mutation.isPending}
-        serverError={mutation.error instanceof Error ? mutation.error.message : undefined}
-        submitLabel="Create article"
-      />
+    <div>
+      <div className="mb-6 rounded-lg bg-white px-6 py-5 shadow-sm">
+        <h1 className="text-2xl font-extrabold">Add Post</h1>
+      </div>
+      <div className="max-w-3xl rounded-lg bg-white p-6 shadow-sm">
+        <ArticleForm
+          categories={categories ?? []}
+          defaultValues={{}}
+          onSubmit={(v) => mutation.mutate(v)}
+          submitting={mutation.isPending}
+          serverError={mutation.error instanceof Error ? mutation.error.message : undefined}
+          submitLabel="Create Post"
+        />
+      </div>
     </div>
   );
 }

@@ -75,3 +75,35 @@ export interface Article extends ArticleListItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface Video {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string | null;
+  hls_playlist: string;
+  duration_seconds: number;
+  category: Category;
+  published_at: string | null;
+  views: number;
+}
+
+export interface GalleryImage {
+  id: number;
+  image: string;
+  caption: string;
+  credit: string;
+  order: number;
+}
+
+export interface PhotoGallery {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  category: Category;
+  images: GalleryImage[];
+  published_at: string | null;
+  created_at: string;
+}

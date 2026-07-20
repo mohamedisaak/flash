@@ -1,6 +1,6 @@
 "use client";
 
-/** Article management list. Authors see their own; editors see everything. */
+/** Posts management table (NewsPortal admin style). Authors see own; editors all. */
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { authApi } from "@/lib/auth-api";
@@ -21,46 +21,58 @@ export default function ArticlesListPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">Articles</h1>
-        <Link href="/dashboard/articles/new" className="text-sm font-medium text-brand hover:underline">
-          + New article
+      <div className="mb-6 flex items-center justify-between rounded-lg bg-white px-6 py-5 shadow-sm">
+        <h1 className="text-2xl font-extrabold">Posts</h1>
+        <Link
+          href="/dashboard/articles/new"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+        >
+          + Add
         </Link>
       </div>
 
-      {isPending ? (
-        <p className="text-[var(--muted)]">Loading…</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] text-left text-xs uppercase text-[var(--muted)]">
-                <th className="py-2">Title</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Published</th>
-                <th className="py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data?.results ?? []).map((a) => (
-                <tr key={a.id} className="border-b border-[var(--border)]">
-                  <td className="py-2 font-medium">{a.title}</td>
-                  <td className="py-2">
-                    <Badge variant={a.status === "published" ? "brand" : "default"}>{a.status}</Badge>
-                  </td>
-                  <td className="py-2 text-[var(--muted)]">{formatDate(a.published_at) || "—"}</td>
-                  <td className="py-2 text-right">
-                    <Link href={`/dashboard/articles/${a.slug}/edit`} className="text-brand hover:underline">
-                      Edit
-                    </Link>
-                  </td>
+      <div className="rounded-lg bg-white p-6 shadow-sm">
+        {isPending ? (
+          <p className="text-[var(--muted)]">Loading…</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] text-left text-xs uppercase text-[var(--muted)]">
+                  <th className="py-2 pr-4">SL</th>
+                  <th className="py-2 pr-4">Post Title</th>
+                  <th className="py-2 pr-4">Category</th>
+                  <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 pr-4">Published</th>
+                  <th className="py-2">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {(data?.results.length ?? 0) === 0 && <p className="py-4 text-[var(--muted)]">No articles yet.</p>}
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {(data?.results ?? []).map((a, i) => (
+                  <tr key={a.id} className="border-b border-[var(--border)]">
+                    <td className="py-3 pr-4 text-[var(--muted)]">{i + 1}</td>
+                    <td className="py-3 pr-4 font-medium">{a.title}</td>
+                    <td className="py-3 pr-4">{a.category.name}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={a.status === "published" ? "accent" : "default"}>{a.status}</Badge>
+                    </td>
+                    <td className="py-3 pr-4 text-[var(--muted)]">{formatDate(a.published_at) || "—"}</td>
+                    <td className="py-3">
+                      <Link
+                        href={`/dashboard/articles/${a.slug}/edit`}
+                        className="rounded bg-brand px-3 py-1 text-xs font-semibold text-white hover:bg-brand-dark"
+                      >
+                        Edit
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(data?.results.length ?? 0) === 0 && <p className="py-4 text-[var(--muted)]">No posts yet.</p>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

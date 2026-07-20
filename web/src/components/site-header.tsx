@@ -1,35 +1,31 @@
 /**
- * Site header with category navigation and a search link.
+ * Site header (NewsPortal style): a utility top bar, a logo + advertisement
+ * banner row, the blue category nav, and the latest-news ticker.
  *
- * This is a **Server Component** (no "use client"): it fetches the category list
- * on the server during render, so the nav is in the initial HTML — good for SEO
- * and speed. See teaching/12-nextjs/03-server-vs-client-components.md.
+ * Server Component: nav/ticker fetch their data on the server for SEO + speed.
+ * See teaching/12-nextjs/03-server-vs-client-components.md.
  */
 import Link from "next/link";
-import { api } from "@/lib/api";
-import { SearchBox } from "./search-box";
+import { TopBar } from "./public/top-bar";
+import { MainNav } from "./public/main-nav";
+import { NewsTicker } from "./public/news-ticker";
 
-export async function SiteHeader() {
-  const categories = await api.listCategories();
-  const topNav = categories.filter((c) => c.parent === null).slice(0, 7);
-
+export function SiteHeader() {
   return (
-    <header className="border-b border-[var(--border)]">
-      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
-        <Link href="/" className="text-2xl font-extrabold tracking-tight">
-          <span className="text-brand">Flash</span> News
+    <header>
+      <TopBar />
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-6 px-4 py-4">
+        <Link href="/" className="text-3xl font-extrabold tracking-tight">
+          <span className="text-brand">Flash</span>
+          <span>News</span>
         </Link>
-        <div className="ml-auto w-full max-w-xs">
-          <SearchBox />
+        {/* Header advertisement slot (placeholder). */}
+        <div className="ml-auto hidden h-24 w-full max-w-2xl items-center justify-center bg-gray-200 text-lg font-semibold text-gray-400 md:flex">
+          Advertisement
         </div>
       </div>
-      <nav className="max-w-5xl mx-auto px-4 pb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
-        {topNav.map((c) => (
-          <Link key={c.id} href={`/${c.slug}`} className="hover:text-brand">
-            {c.name}
-          </Link>
-        ))}
-      </nav>
+      <MainNav />
+      <NewsTicker />
     </header>
   );
 }
