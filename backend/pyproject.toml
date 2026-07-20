@@ -1,0 +1,24 @@
+[project]
+name = "flash-backend"
+version = "0.1.0"
+description = "Flash — news publishing platform backend (Django + DRF modular monolith)"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=6.0.7",
+    "django-environ>=0.11",
+    "psycopg[binary]>=3.2",
+    "pillow>=11.0",
+]
+
+[dependency-groups]
+# Installed in dev/CI only (uv sync installs these by default).
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.9",
+    "factory-boy>=3.3",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_test.py"]

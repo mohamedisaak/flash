@@ -1,0 +1,42 @@
+# Development infrastructure for the Flash news platform.
+#
+# This file stands up the *stateful backing services* the backend needs during
+# local development — PostgreSQL and Redis — while you continue to run Django
+# itself on the host via `uv run python manage.py runserver`. Running the app on
+# the host keeps the fast edit/reload loop; only the databases live in Docker.
+#
+# Usage:
+#   docker compose -f infrastructure/docker-compose.dev.yml up -d
+#   # then in backend/: set DATABASE_URL / REDIS_URL (see .env.example) and run
+#   uv run python manage.py migrate && uv run python manage.py runserver
+#
+# A full production compose file (backend + celery + web + nginx) is added in
+# Phase 8. See teaching/25-docker/ and teaching/28-deployment/.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: flash
+      POSTGRES_USER: flash
+      POSTGRES_PASSWORD: flash
+    ports:
+      - "5432:5432"
+    volumes:
+      - flash_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - flash_redis_data:/data
+
+volumes:
+  flash_pg_data:
+  flash_redis_data:

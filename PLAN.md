@@ -1,0 +1,260 @@
+# News Publishing Platform — Roadmap
+
+> This is the canonical, living plan for this repository. It lives in the
+> project root (not a user-home scratch folder) so it travels with the code
+> and stays in sync as phases complete. See [CLAUDE.md](CLAUDE.md) for the
+> operating rules an AI assistant must follow while working in this repo.
+
+## Context
+
+The goal is a production-grade, multi-surface news publishing platform
+(public website, mobile app, editorial/admin dashboard, author CMS, REST
+API, media pipeline, ads, SEO, notifications, analytics) built on
+Django/DRF + Next.js + React Native, optimized for low infra cost (single
+VPS to start) and SEO-first performance.
+
+On top of being a production application, this repository is also a
+**complete self-study software engineering curriculum**: every feature,
+file, table, endpoint, and architectural decision built here must be
+accompanied by teaching material in `teaching/` that lets the project owner
+learn each underlying technology from the actual source code. See
+"AI Teaching Mode" below — this applies to every phase, not just Phase 1.
+
+Current repo state (as of the last plan update): a fresh
+`django-admin startproject flash` scaffold at the repo root — `manage.py`,
+`flash/{settings,urls,asgi,wsgi}.py`, `db.sqlite3`, `pyproject.toml`
+(Django 6.0.7, Python 3.14 via `uv`). No git commits yet. Greenfield build.
+
+## Guiding Decisions
+
+- **Monorepo**, single git repo, top-level dirs: `backend/`, `web/`,
+  `mobile/`, `infrastructure/`, `docs/`, `teaching/`.
+- **Backend**: Django 6.0.7 / Python 3.14 (already installed via `uv`; both
+  exceed the spec's Django 5+/Python 3.13+ floor) + DRF, structured as a
+  modular monolith: one Django app per bounded context (`accounts`,
+  `articles`, `categories`, `media_library`, `videos`, `galleries`,
+  `livecoverage`, `ads`, `newsletters`, `notifications`, `comments`,
+  `analytics`, `seo`), each owning its own models/serializers/views/services,
+  kept loosely coupled via signals/service functions rather than cross-app
+  model imports.
+- **Web**: Next.js 16 (App Router) + TS + Tailwind + Shadcn, SSR/SSG/ISR
+  per-route based on content volatility.
+- **Mobile**: Expo (React Native) + Expo Router, consumes the same DRF API.
+- **Infra**: Docker Compose (Postgres, Redis, backend, celery worker+beat,
+  web, nginx), GitHub Actions CI, Let's Encrypt via nginx/certbot — no k8s,
+  no paid managed services required to run.
+- **Incremental delivery**: each phase ends in a runnable, verifiable state
+  before moving to the next.
+- **Teach-as-you-build**: no feature is "done" until its paired teaching
+  material exists (see below). Documentation is not a separate cleanup pass
+  — it ships with the code that introduced the concept.
+
+## Root Project Structure
+
+```text
+project-root/
+├── backend/         Django + DRF modular monolith
+├── web/             Next.js public site + admin + author dashboards
+├── mobile/          Expo/React Native app
+├── infrastructure/  Docker Compose, nginx, CI configs
+├── docs/            Architecture, ERD, API spec, deployment guides
+└── teaching/        Self-study curriculum built from this project's own code
+```
+
+## AI Teaching Mode
+
+This project is simultaneously a production application **and** a complete
+software engineering learning platform for the project owner, who starts
+at beginner level. Whenever an AI assistant works in this repo it must act
+as a Senior Architect / Backend / Frontend / Mobile / DevOps / Database /
+QA / SEO Engineer *and* as a technical mentor — building the feature, then
+teaching it.
+
+### `teaching/` structure (scaffolded in Phase 0, filled in incrementally)
+
+```text
+teaching/
+├── 00-introduction/        21-nativewind/
+├── 01-software-engineering/22-mobile-architecture/
+├── 02-git-github/          23-seo/
+├── 03-linux/               24-testing/
+├── 04-python/              25-docker/
+├── 05-django/               26-nginx/
+├── 06-django-rest-framework/27-github-actions/
+├── 07-postgresql/           28-deployment/
+├── 08-redis/                29-system-design/
+├── 09-celery/                30-database-design/
+├── 10-api-design/            31-security/
+├── 11-authentication/        32-performance/
+├── 12-nextjs/                 33-monitoring/
+├── 13-react/                  34-production-readiness/
+├── 14-typescript/             35-project-walkthrough/
+├── 15-tailwind/                36-debugging/
+├── 16-shadcn/                  37-faq/
+├── 17-react-query/             38-glossary/
+├── 18-zustand/                 39-roadmaps/
+├── 19-react-native/
+└── 20-expo/
+```
+
+### Rules the AI must follow going forward
+
+1. **Markdown-first**: every topic is taught via numbered markdown lessons
+   inside the matching `teaching/NN-topic/` folder (e.g.
+   `teaching/05-django/05-models.md`).
+2. **File-paired docs**: creating a non-trivial file requires a matching
+   explainer under `teaching/<topic>/project-files/<name>-explained.md`
+   covering why it exists, the problem it solves, how it works, how it
+   interacts with other files, common mistakes, and best practices.
+3. **Code-paired lessons**: introducing a meaningfully new concept (a model,
+   an endpoint, a component, a screen, a test pattern) requires a matching
+   lesson covering the concept generally, not just the one instance.
+4. **Teach-as-you-build loop**, per feature: build it → explain it → diagram
+   it (Mermaid) → add exercises (beginner/intermediate/advanced + solutions)
+   → add quiz questions → add debugging examples → add interview questions
+   (junior/mid/senior).
+5. **Depth scales with teaching value.** A brand-new concept (e.g. "what is
+   a Django migration") gets a full lesson with analogies and exercises. A
+   repetitive instance of an already-taught pattern (e.g. the 6th
+   near-identical DRF serializer) gets a short note or an addition to the
+   existing lesson's examples, not a duplicate lesson — this keeps the
+   curriculum a coherent reference instead of noise. When in doubt, prefer
+   updating an existing lesson over spawning a near-duplicate file.
+6. **Dedicated tracks** get maintained as their own directories per the spec:
+   `29-system-design/` (client-server, REST, auth flow, request lifecycle,
+   caching, CDN, reverse proxy, scaling, load balancing, background jobs),
+   `30-database-design/` (every table: purpose, columns, relationships,
+   constraints, indexes, query examples, normalization), `10-api-design/`
+   (every endpoint: URL, method, request/response bodies, errors, security),
+   `35-project-walkthrough/` (folder structure, request flow, auth flow,
+   article publishing workflow, SEO workflow, deployment workflow — written
+   once the pieces they describe actually exist).
+7. **A phase is not complete** until its code changes AND its teaching
+   material are both committed.
+8. Full requirement text (exercises, quizzes, interview prep formats, etc.)
+   lives in `teaching/00-introduction/` as the curriculum's own style guide,
+   so it's discoverable from inside the curriculum itself rather than only
+   in this plan.
+
+## Phase Roadmap
+
+**Phase 0 — Repo restructuring (mechanical, do first)**
+Move `manage.py`, `flash/` → `backend/manage.py`, `backend/config/` (rename
+the Django project package from `flash` to `config`); move
+`pyproject.toml`/`uv.lock` into `backend/`; drop `db.sqlite3` (Postgres via
+Docker from here on); scaffold `web/`, `mobile/`, `infrastructure/`, `docs/`
+placeholders; scaffold the full `teaching/00-…39-…` directory skeleton with
+an index README per folder; write root `README.md`, `PLAN.md` (this file),
+`CLAUDE.md`. First commit.
+
+**Phase 1 — Architecture & Database Design**
+Postgres + Redis via `infrastructure/docker-compose.dev.yml`; Django apps
+with full model layer (custom `User` + RBAC, `Category`, `Tag`, `Article` +
+revisions/statuses, `BreakingNewsAlert`, `LiveBlog`/`LiveBlogUpdate`,
+`Video`, `PhotoGallery`+`GalleryImage`, `Advertisement` + tracking,
+`NewsletterSubscriber`, `Notification`, `Comment` (nested), SEO metadata
+mixin); environment-based settings, Postgres, Redis cache, full-text search
+fields. Deliverable: ERD in `docs/`, migrations applied, admin registered
+for every model, **plus** `teaching/05-django/` model lessons and
+`teaching/30-database-design/` per-table docs for everything created.
+
+**Phase 2 — Backend core (DRF API)**
+JWT auth, RBAC permission classes, serializers/viewsets/routers per app,
+filtering/search/ordering, pagination, `/api/v1/` namespace, OpenAPI +
+Swagger via drf-spectacular, rate limiting, audit logging — paired with
+`teaching/06-django-rest-framework/`, `teaching/10-api-design/`,
+`teaching/11-authentication/` lessons and per-endpoint docs.
+
+**Phase 3 — Media & background processing**
+Storage abstraction (local → MinIO/S3), Pillow image pipeline, FFmpeg video
+pipeline, Celery + Redis broker + beat schedule — paired with
+`teaching/08-redis/`, `teaching/09-celery/` lessons.
+
+**Phase 4 — SEO & search**
+Sitemaps (incl. Google News), robots.txt, RSS, JSON-LD structured data,
+Postgres full-text search, OpenSearch interface for later swap-in — paired
+with `teaching/23-seo/`.
+
+**Phase 5 — Web frontend (Next.js)**
+Public site + Editorial/Admin dashboard + Author dashboard — paired with
+`teaching/12-nextjs/`, `13-react/`, `14-typescript/`, `15-tailwind/`,
+`16-shadcn/`, `17-react-query/`.
+
+**Phase 6 — Mobile app (Expo)**
+Feature-based Expo Router app, offline cache, push notifications — paired
+with `teaching/19-react-native/`, `20-expo/`, `21-nativewind/`,
+`22-mobile-architecture/`.
+
+**Phase 7 — Notifications & analytics**
+FCM push, in-app/email delivery, internal analytics dashboard, GA/Search
+Console — paired with relevant lessons under `29-system-design/` and a new
+analytics note set.
+
+**Phase 8 — DevOps, CI/CD, security hardening, testing**
+Production Docker Compose + nginx + certbot, GitHub Actions, pytest/
+Vitest/Jest test suites targeting 80% coverage, security pass, backup/
+restore runbook, production checklist — paired with `teaching/24-testing/`,
+`25-docker/`, `26-nginx/`, `27-github-actions/`, `28-deployment/`,
+`31-security/`, `32-performance/`, `33-monitoring/`,
+`34-production-readiness/`.
+
+`teaching/35-project-walkthrough/` and `teaching/39-roadmaps/` get written
+last, once there's a real system to walk through and a real history to
+summarize.
+
+Each phase after 0/1 is large enough to warrant its own detailed sub-plan
+when it starts — this document sequences and scopes them; file-level detail
+is added phase by phase.
+
+## Verification
+
+- Phase 0: `cd backend && uv run manage.py check` passes; repo boots from
+  new paths; `teaching/` skeleton exists with an index file per folder.
+- Phase 1: `uv run manage.py makemigrations --check`, `migrate`, and
+  `runserver` + `/admin/` shows all registered models; ERD doc committed;
+  matching teaching lessons committed alongside.
+- Later phases: each has its own test suite run (pytest / vitest / jest)
+  plus a manual smoke pass before being called done, plus a teaching-docs
+  completeness check (every new file/concept has its paired lesson).
+
+## Status
+
+- [x] Phase 0 — Repo restructuring (backend/ + teaching/ scaffold, 40 topics)
+- [x] Phase 1 — Architecture & Database Design (12 apps, models, migrations,
+      admin, ERD, paired teaching lessons)
+- [ ] Phase 2 — Backend core (DRF API)
+- [ ] Phase 3 — Media & background processing
+- [ ] Phase 4 — SEO & search
+- [ ] Phase 5 — Web frontend
+- [ ] Phase 6 — Mobile app
+- [ ] Phase 7 — Notifications & analytics
+- [ ] Phase 8 — DevOps, CI/CD, security, testing
+
+This plan supersedes the earlier draft that was stored outside the repo at
+`~/.claude/plans/keen-mixing-spark.md`.
+
+### Phase 1 — what shipped
+
+- `backend/` modular monolith: 12 apps under `backend/apps/` (common, accounts,
+  categories, articles, livecoverage, videos, galleries, ads, newsletters,
+  notifications, comments, analytics).
+- Custom `User` + RBAC roles; `Article` workflow + revisions + breaking news;
+  live blogs; videos; galleries; ads with CTR; newsletters; notifications;
+  threaded comments; analytics events. Env-based settings (SQLite fallback so
+  `manage.py check`/`migrate` run with zero infra; Postgres via Docker for real
+  work).
+- All models migrate cleanly (`makemigrations --check` passes) and every model
+  is inspectable in the Django admin.
+- `infrastructure/docker-compose.dev.yml` (Postgres + Redis), `backend/.env.example`.
+- Docs: `docs/architecture.md`, `docs/database-erd.md`.
+- Teaching: curriculum scaffold (40 topics) + real lessons for Django (models,
+  migrations, admin, settings & Article deep-dives), Database Design (per-table
+  docs for every table), Authentication (users/RBAC), Docker (dev compose),
+  System Design (architecture overview), and a Glossary.
+
+### Phase 2 — next up
+
+DRF: JWT auth, RBAC permission classes, serializers/viewsets/routers per app,
+`/api/v1/` namespace, filtering/search/pagination, drf-spectacular OpenAPI +
+Swagger, throttling, audit logging — with paired lessons in
+`teaching/06-django-rest-framework/`, `10-api-design/`, `11-authentication/`.
