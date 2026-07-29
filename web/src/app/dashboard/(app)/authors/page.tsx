@@ -7,8 +7,15 @@ import { ROLE_OPTIONS, USER_STATUS_OPTIONS } from "@/lib/dashboard-types";
 import { CrudSection } from "@/components/dashboard/crud/crud-section";
 
 interface AuthorRow {
-  id: number; username: string; email: string; full_name: string;
-  first_name: string; last_name: string; role: string; status: string; avatar: string | null;
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  status: string;
+  avatar: string | null;
 }
 
 export default function AuthorsPage() {
@@ -25,7 +32,13 @@ export default function AuthorsPage() {
           render: (r) => {
             const src = mediaUrl(r.avatar, env.backendOrigin);
             return src ? (
-              <Image src={src} alt={r.full_name || r.username} width={44} height={44} className="h-11 w-11 rounded object-cover" />
+              <Image
+                src={src}
+                alt={r.full_name || r.username}
+                width={44}
+                height={44}
+                className="h-11 w-11 rounded object-cover"
+              />
             ) : (
               <span className="text-[var(--muted)]">—</span>
             );
@@ -33,7 +46,10 @@ export default function AuthorsPage() {
         },
         { header: "Name", render: (r) => r.full_name || r.username },
         { header: "Email", render: (r) => r.email },
-        { header: "Role", render: (r) => <span className="capitalize">{r.role.replace(/_/g, " ")}</span> },
+        {
+          header: "Role",
+          render: (r) => <span className="capitalize">{r.role.replace(/_/g, " ")}</span>,
+        },
       ]}
       fields={[
         { name: "username", label: "Username", type: "text", required: true },
@@ -43,11 +59,21 @@ export default function AuthorsPage() {
         { name: "role", label: "Role", type: "select", options: ROLE_OPTIONS },
         { name: "status", label: "Status", type: "select", options: USER_STATUS_OPTIONS },
         { name: "avatar", label: "Photo", type: "file" },
-        { name: "password", label: "Password", type: "password", createOnly: true, help: "Leave blank to auto-generate; set only when adding." },
+        {
+          name: "password",
+          label: "Password",
+          type: "password",
+          createOnly: true,
+          help: "Leave blank to auto-generate; set only when adding.",
+        },
       ]}
       toForm={(r) => ({
-        username: r.username, email: r.email, first_name: r.first_name,
-        last_name: r.last_name, role: r.role, status: r.status,
+        username: r.username,
+        email: r.email,
+        first_name: r.first_name,
+        last_name: r.last_name,
+        role: r.role,
+        status: r.status,
       })}
     />
   );

@@ -15,7 +15,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
-from django.urls import include, path
+from django.http import JsonResponse
+from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -26,7 +28,14 @@ from apps.seo.feeds import CategoryFeed, LatestArticlesFeed
 from apps.seo.sitemaps import SITEMAPS
 from apps.seo.views import google_news_sitemap, robots_txt
 
+
+def healthz(_request):
+    """Liveness probe for the host's load balancer (no DB touch, always cheap)."""
+    return JsonResponse({"status": "ok"})
+
+
 urlpatterns = [
+    path("healthz", healthz, name="healthz"),
     path("admin/", admin.site.urls),
     # REST API v1
     path("api/v1/", include(("config.api_v1", "v1"), namespace="v1")),
@@ -42,7 +51,18 @@ urlpatterns = [
     path("rss/<slug:slug>/", CategoryFeed(), name="rss-category"),
 ]
 
-# Serve user-uploaded media via Django during local development only.
-# In production, Nginx serves MEDIA_ROOT directly (see infrastructure/).
+# Serve user-uploaded media.
+# - Dev: Django's static() helper (auto-reload friendly).
+# - Prod WITHOUT S3: serve MEDIA_ROOT from the app (e.g. files on a persistent
+#   Render Disk). Fine for a single instance; move to S3/R2 + CDN (USE_S3=True)
+#   to scale out, at which point storage serves its own URLs and this is skipped.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+elif not settings.USE_S3:
+    urlpatterns += [
+        re_path(
+            r"^media/(?P<path>.*)$",
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]

@@ -26,8 +26,16 @@ class LiveBlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = LiveBlog
         fields = [
-            "id", "title", "slug", "summary", "category", "category_id",
-            "status", "starts_at", "ended_at", "latest_updates",
+            "id",
+            "title",
+            "slug",
+            "summary",
+            "category",
+            "category_id",
+            "status",
+            "starts_at",
+            "ended_at",
+            "latest_updates",
         ]
         read_only_fields = ["slug", "category"]
 

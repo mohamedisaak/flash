@@ -8,15 +8,15 @@ Auth & account URLs, mounted under /api/v1/auth/ by the project urlconf.
 """
 
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import MeView, RegisterView
+from .views import LoginView, MeView, RegisterView
 
 app_name = "accounts"
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
-    path("login/", TokenObtainPairView.as_view(), name="login"),
+    path("login/", LoginView.as_view(), name="login"),
     path("login/refresh/", TokenRefreshView.as_view(), name="login-refresh"),
     path("me/", MeView.as_view(), name="me"),
 ]

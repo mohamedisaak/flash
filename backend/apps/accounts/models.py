@@ -116,3 +116,10 @@ class User(AbstractUser):
             Role.MANAGING_EDITOR,
             Role.SECTION_EDITOR,
         }
+
+    @property
+    def is_admin(self) -> bool:
+        """Site administrators — the only roles allowed to manage user accounts
+        and assign roles. Deliberately narrower than ``is_editorial_staff`` so a
+        journalist/author can never create accounts or escalate privileges."""
+        return self.role in {Role.SUPER_ADMIN, Role.ADMIN}

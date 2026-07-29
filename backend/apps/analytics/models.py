@@ -34,7 +34,9 @@ class PageView(TimeStampedModel):
     referrer = models.URLField(blank=True)
     # Coarse source bucket derived from the referrer (direct/search/social/etc.).
     source = models.CharField(max_length=32, blank=True, db_index=True)
-    read_seconds = models.PositiveIntegerField(default=0, help_text="Dwell time reported by the client.")
+    read_seconds = models.PositiveIntegerField(
+        default=0, help_text="Dwell time reported by the client."
+    )
 
     class Meta:
         indexes = [models.Index(fields=["article", "created_at"])]

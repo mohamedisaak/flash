@@ -1,0 +1,19 @@
+# Keep the build context small and secret-free. Context is ./web, so repo-root
+# folders (teaching/, docs/, mobile/, *-audit/) are never sent to Docker.
+
+node_modules/
+.next/
+out/
+
+# Secrets / local env
+.env
+.env*.local
+*.env
+!*.env.example
+
+# VCS / editor / meta
+.git/
+.gitignore
+*.md
+Dockerfile
+.dockerignore

@@ -22,7 +22,10 @@ export default function EditArticlePage({ params }: { params: Promise<{ slug: st
     queryKey: ["article", slug],
     queryFn: () => authApi.getArticle(slug),
   });
-  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: authApi.listCategories });
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: authApi.listCategories,
+  });
 
   const mutation = useMutation({
     mutationFn: (v: ArticleFormValues) => authApi.updateArticle(slug, formValuesToPayload(v)),

@@ -1,13 +1,29 @@
 "use client";
 import { CrudSection } from "@/components/dashboard/crud/crud-section";
-interface Row { id: number; title: string; url: string; is_active: boolean; order: number; }
+interface Row {
+  id: number;
+  title: string;
+  url: string;
+  is_active: boolean;
+  order: number;
+}
 export default function LiveChannelsPage() {
   return (
     <CrudSection<Row>
-      title="Live Channels" resourcePath="cms/live-channels" queryKey="live-channels" hasFiles
+      title="Live Channels"
+      resourcePath="cms/live-channels"
+      queryKey="live-channels"
+      hasFiles
       columns={[
         { header: "Title", render: (r) => r.title },
-        { header: "URL", render: (r) => <a href={r.url} className="text-brand hover:underline">{r.url}</a> },
+        {
+          header: "URL",
+          render: (r) => (
+            <a href={r.url} className="text-brand hover:underline">
+              {r.url}
+            </a>
+          ),
+        },
         { header: "Active", render: (r) => (r.is_active ? "Yes" : "No") },
       ]}
       fields={[

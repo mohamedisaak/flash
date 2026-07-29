@@ -23,6 +23,14 @@ class SiteSetting(TimeStampedModel):
 
     site_name = models.CharField(max_length=120, default="Flash News")
     contact_email = models.EmailField(default="contact@flashnews.dev")
+    contact_phone = models.CharField(max_length=40, blank=True, default="")
+    contact_address = models.CharField(max_length=255, blank=True, default="")
+    about_us = models.TextField(
+        blank=True,
+        default="Flash News is a demo news platform built as a full-stack learning "
+        "project — covering the backend API, SEO, the website, and the mobile app.",
+        help_text="Short 'About Us' blurb shown in the site footer.",
+    )
     news_ticker_total = models.PositiveIntegerField(default=10)
     video_item_total = models.PositiveIntegerField(default=6)
     theme_color_1 = models.CharField(max_length=9, default="#4f63d2")

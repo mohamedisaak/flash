@@ -66,9 +66,7 @@ class PostgresSearchBackend(BaseSearchBackend):
 
         # Fallback (SQLite and friends): unranked substring match.
         return self._base_qs().filter(
-            Q(title__icontains=query)
-            | Q(excerpt__icontains=query)
-            | Q(content__icontains=query)
+            Q(title__icontains=query) | Q(excerpt__icontains=query) | Q(content__icontains=query)
         )
 
     def autocomplete_titles(self, query: str, limit: int = 8) -> list[str]:

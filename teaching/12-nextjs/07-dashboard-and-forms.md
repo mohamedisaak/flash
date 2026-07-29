@@ -108,6 +108,44 @@ the backend (JWT auth + RBAC permission classes + queryset scoping from Phases 2
 Never trust the client; the API rejects an author trying to publish regardless of
 what the dashboard shows.
 
+## 7b. Gotcha: never hand-set `Content-Type` for `FormData`
+
+Our `authFetch` helper defaults a JSON content-type for any request that has a
+body:
+
+```ts
+// BROKEN — clobbers file uploads
+if (init.body && !headers.has("Content-Type"))
+  headers.set("Content-Type", "application/json");
+```
+
+For text endpoints that's fine. But an image upload sends a `FormData` body, and
+`FormData` is *also* truthy — so this line stamped `application/json` onto a
+multipart request. Two things then go wrong:
+
+1. The browser **stops** adding its own `Content-Type: multipart/form-data;
+   boundary=…` header. Without the boundary, no server can split the parts.
+2. DRF believes the claim and routes the body to its **JSON** parser. The first
+   byte of a JPEG is `0xFF`, which is not valid UTF-8, so you get:
+
+   ```
+   API 400: JSON parse error - 'utf-8' codec can't decode byte 0xff in position 334: invalid start byte
+   ```
+
+The rule: **let the browser set the content-type for `FormData`.** Only force
+JSON when the body is *not* a `FormData`.
+
+```ts
+// FIXED
+if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type"))
+  headers.set("Content-Type", "application/json");
+```
+
+Because every request (JSON create, multipart `uploadCreate`, singleton file
+patch) funnels through this one helper, the one-line guard fixes all upload
+paths at once — a good argument for a single choke-point client over scattered
+`fetch` calls.
+
 ## 8. Exercises
 
 - **Beginner:** Add a "Preview" link on the edit page that opens the public

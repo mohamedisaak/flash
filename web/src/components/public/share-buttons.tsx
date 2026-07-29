@@ -1,9 +1,25 @@
 /** Social share buttons for an article (server-rendered anchor links). */
 const SHARE = [
-  { name: "Facebook", color: "#3b5998", url: (u: string) => `https://www.facebook.com/sharer/sharer.php?u=${u}` },
-  { name: "Twitter", color: "#1da1f2", url: (u: string, t: string) => `https://twitter.com/intent/tweet?url=${u}&text=${t}` },
-  { name: "LinkedIn", color: "#0077b5", url: (u: string) => `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
-  { name: "WhatsApp", color: "#25d366", url: (u: string, t: string) => `https://wa.me/?text=${t}%20${u}` },
+  {
+    name: "Facebook",
+    color: "#3b5998",
+    url: (u: string) => `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+  },
+  {
+    name: "Twitter",
+    color: "#1da1f2",
+    url: (u: string, t: string) => `https://twitter.com/intent/tweet?url=${u}&text=${t}`,
+  },
+  {
+    name: "LinkedIn",
+    color: "#0077b5",
+    url: (u: string) => `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
+  },
+  {
+    name: "WhatsApp",
+    color: "#25d366",
+    url: (u: string, t: string) => `https://wa.me/?text=${t}%20${u}`,
+  },
 ];
 
 export function ShareButtons({ url, title }: { url: string; title: string }) {

@@ -7,7 +7,12 @@ import { env } from "@/lib/env";
 import { formatDate, mediaUrl } from "@/lib/utils";
 
 export const revalidate = 300;
-export const metadata: Metadata = { title: "Video Gallery" };
+export const metadata: Metadata = {
+  title: "Video Gallery",
+  description: "Watch the latest news videos, reports and highlights.",
+  alternates: { canonical: `${env.siteUrl}/video-gallery` },
+  openGraph: { title: "Video Gallery", type: "website", url: `${env.siteUrl}/video-gallery` },
+};
 
 export default async function VideoGalleryPage() {
   const videos = await api.listVideos();
@@ -16,7 +21,9 @@ export default async function VideoGalleryPage() {
     <div>
       <h1 className="text-3xl font-extrabold">Video Gallery</h1>
       <nav className="mt-2 border-b border-[var(--border)] pb-3 text-sm text-[var(--muted)]">
-        <Link href="/" className="hover:text-brand">Home</Link>
+        <Link href="/" className="hover:text-brand">
+          Home
+        </Link>
         <span className="mx-2">/</span>
         <span>Video Gallery</span>
       </nav>
@@ -30,9 +37,19 @@ export default async function VideoGalleryPage() {
             return (
               <figure key={v.id} className="group">
                 <div className="relative aspect-video w-full overflow-hidden rounded bg-black">
-                  {thumb && <Image src={thumb} alt={v.title} fill sizes="300px" className="object-cover opacity-90" />}
+                  {thumb && (
+                    <Image
+                      src={thumb}
+                      alt={v.title}
+                      fill
+                      sizes="300px"
+                      className="object-cover opacity-90"
+                    />
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-2xl text-white">▶</span>
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-2xl text-white">
+                      ▶
+                    </span>
                   </div>
                 </div>
                 <figcaption className="mt-2 font-semibold leading-snug">{v.title}</figcaption>

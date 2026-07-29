@@ -32,14 +32,21 @@ export async function MainNav() {
           const kids = childrenOf(c.id);
           return (
             <div key={c.id} className="group relative">
-              <Link href={`/${c.slug}`} className="flex items-center px-4 py-3 text-sm font-semibold hover:bg-brand-dark">
+              <Link
+                href={`/${c.slug}`}
+                className="flex items-center px-4 py-3 text-sm font-semibold hover:bg-brand-dark"
+              >
                 {c.name}
                 {kids.length > 0 && <Caret />}
               </Link>
               {kids.length > 0 && (
                 <div className="invisible absolute left-0 top-full z-20 min-w-44 bg-white text-[var(--foreground)] opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
                   {kids.map((k) => (
-                    <Link key={k.id} href={`/${k.slug}`} className="block px-4 py-2 text-sm hover:bg-gray-100">
+                    <Link
+                      key={k.id}
+                      href={`/${k.slug}`}
+                      className="block px-4 py-2 text-sm hover:bg-gray-100"
+                    >
                       {k.name}
                     </Link>
                   ))}
@@ -53,8 +60,12 @@ export async function MainNav() {
             Gallery <Caret />
           </span>
           <div className="invisible absolute left-0 top-full z-20 min-w-44 bg-white text-[var(--foreground)] opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
-            <Link href="/photo-gallery" className="block px-4 py-2 text-sm hover:bg-gray-100">Photo Gallery</Link>
-            <Link href="/video-gallery" className="block px-4 py-2 text-sm hover:bg-gray-100">Video Gallery</Link>
+            <Link href="/photo-gallery" className="block px-4 py-2 text-sm hover:bg-gray-100">
+              Photo Gallery
+            </Link>
+            <Link href="/video-gallery" className="block px-4 py-2 text-sm hover:bg-gray-100">
+              Video Gallery
+            </Link>
           </div>
         </div>
       </div>

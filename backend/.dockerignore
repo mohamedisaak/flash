@@ -1,0 +1,29 @@
+# Keep the build context (and image) small and free of secrets/dev cruft.
+# The context is ./backend, so repo-root folders (teaching/, docs/, mobile/,
+# *-audit/) are already excluded — they're never sent to the Docker daemon.
+
+# Secrets / local env (never bake into an image)
+.env
+*.env
+!*.env.example
+
+# Virtualenvs & caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local data / generated files (regenerated in the image or provided at runtime)
+db.sqlite3
+media/
+staticfiles/
+
+# Tests aren't needed to run the service
+**/tests/
+
+# VCS / editor
+.git/
+.gitignore
+*.md

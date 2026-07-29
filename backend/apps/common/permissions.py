@@ -33,6 +33,19 @@ class IsEditorialStaff(BasePermission):
         return bool(user and user.is_authenticated and user.is_editorial_staff)
 
 
+class IsAdmin(BasePermission):
+    """Only site administrators (super_admin/admin).
+
+    Use for privileged operations that must not be available to ordinary
+    editorial staff — above all **user account management and role assignment**,
+    where a looser check would let an author escalate their own privileges.
+    """
+
+    def has_permission(self, request, view) -> bool:
+        user = request.user
+        return bool(user and user.is_authenticated and user.is_admin)
+
+
 class ReadOnlyOrEditorialStaff(BasePermission):
     """Public/authenticated reads; writes require editorial staff.
 

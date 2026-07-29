@@ -2,3 +2,6 @@
 # install script enables Next.js image optimization in `next dev`.
 allowBuilds:
   sharp: true
+  # ESLint's import resolver ships this native binding, but our lint runs fine
+  # without building it, so we explicitly decline the build script.
+  unrs-resolver: false

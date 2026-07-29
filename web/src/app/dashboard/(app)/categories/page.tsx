@@ -3,7 +3,12 @@
 import { CrudSection } from "@/components/dashboard/crud/crud-section";
 
 interface CatRow {
-  id: number; name: string; slug: string; parent: number | null; order: number; is_active: boolean;
+  id: number;
+  name: string;
+  slug: string;
+  parent: number | null;
+  order: number;
+  is_active: boolean;
 }
 
 export default function CategoriesPage() {

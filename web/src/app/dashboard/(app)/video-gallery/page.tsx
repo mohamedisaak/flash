@@ -5,7 +5,12 @@ import { useCategoryOptions } from "@/components/dashboard/use-category-options"
 import type { Category } from "@/lib/types";
 
 interface Row {
-  id: number; title: string; slug: string; description: string; category: Category; views: number;
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  category: Category;
+  views: number;
 }
 
 export default function VideoGalleryAdminPage() {
@@ -24,12 +29,27 @@ export default function VideoGalleryAdminPage() {
       ]}
       fields={[
         { name: "title", label: "Title", type: "text", required: true },
-        { name: "video_file", label: "Video File", type: "file", help: "Required when adding a video." },
+        {
+          name: "video_file",
+          label: "Video File",
+          type: "file",
+          help: "Required when adding a video.",
+        },
         { name: "thumbnail", label: "Thumbnail", type: "file" },
-        { name: "category_id", label: "Category", type: "select", options: categoryOptions, required: true },
+        {
+          name: "category_id",
+          label: "Category",
+          type: "select",
+          options: categoryOptions,
+          required: true,
+        },
         { name: "description", label: "Description", type: "textarea" },
       ]}
-      toForm={(r) => ({ title: r.title, category_id: r.category?.id ?? "", description: r.description })}
+      toForm={(r) => ({
+        title: r.title,
+        category_id: r.category?.id ?? "",
+        description: r.description,
+      })}
     />
   );
 }

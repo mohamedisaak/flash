@@ -9,9 +9,23 @@ class SiteSettingSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteSetting
         fields = [
-            "id", "site_name", "contact_email", "news_ticker_total", "video_item_total",
-            "theme_color_1", "theme_color_2", "google_analytics_id", "disqus_code",
-            "logo", "favicon", "date_status", "email_status", "news_ticker_status",
+            "id",
+            "site_name",
+            "contact_email",
+            "contact_phone",
+            "contact_address",
+            "about_us",
+            "news_ticker_total",
+            "video_item_total",
+            "theme_color_1",
+            "theme_color_2",
+            "google_analytics_id",
+            "disqus_code",
+            "logo",
+            "favicon",
+            "date_status",
+            "email_status",
+            "news_ticker_status",
         ]
 
 

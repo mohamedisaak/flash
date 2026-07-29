@@ -54,9 +54,13 @@ export default function ArticlesListPage() {
                     <td className="py-3 pr-4 font-medium">{a.title}</td>
                     <td className="py-3 pr-4">{a.category.name}</td>
                     <td className="py-3 pr-4">
-                      <Badge variant={a.status === "published" ? "accent" : "default"}>{a.status}</Badge>
+                      <Badge variant={a.status === "published" ? "accent" : "default"}>
+                        {a.status}
+                      </Badge>
                     </td>
-                    <td className="py-3 pr-4 text-[var(--muted)]">{formatDate(a.published_at) || "—"}</td>
+                    <td className="py-3 pr-4 text-[var(--muted)]">
+                      {formatDate(a.published_at) || "—"}
+                    </td>
                     <td className="py-3">
                       <Link
                         href={`/dashboard/articles/${a.slug}/edit`}
@@ -69,7 +73,9 @@ export default function ArticlesListPage() {
                 ))}
               </tbody>
             </table>
-            {(data?.results.length ?? 0) === 0 && <p className="py-4 text-[var(--muted)]">No posts yet.</p>}
+            {(data?.results.length ?? 0) === 0 && (
+              <p className="py-4 text-[var(--muted)]">No posts yet.</p>
+            )}
           </div>
         )}
       </div>

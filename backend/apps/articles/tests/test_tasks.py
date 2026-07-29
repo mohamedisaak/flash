@@ -13,8 +13,11 @@ pytestmark = pytest.mark.django_db
 
 def _scheduled(category, author, when):
     return Article.objects.create(
-        title=f"Scheduled {when}", author=author, category=category,
-        status=ArticleStatus.SCHEDULED, published_at=when,
+        title=f"Scheduled {when}",
+        author=author,
+        category=category,
+        status=ArticleStatus.SCHEDULED,
+        published_at=when,
     )
 
 

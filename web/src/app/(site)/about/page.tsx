@@ -1,22 +1,12 @@
-import type { Metadata } from "next";
+/**
+ * Legacy `/about` — the About page is now the CMS-driven `/pages/about`.
+ * Keep this path working by redirecting any old links/bookmarks.
+ */
+import { permanentRedirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "About" };
-
-export default function AboutPage() {
-  return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="text-3xl font-extrabold">About Flash News</h1>
-      <div className="article-body mt-4 text-[1.05rem] leading-relaxed text-[var(--foreground)]">
-        <p>
-          Flash News is a demo news publishing platform built as a full-stack learning
-          project. It spans a Django REST API, an SEO layer, this Next.js website, and an
-          editorial dashboard — all documented in the <code>teaching/</code> curriculum.
-        </p>
-        <p>
-          This page is a placeholder for the sort of static content (About, Contact, Terms,
-          Privacy) a real newsroom would manage from the admin panel.
-        </p>
-      </div>
-    </div>
-  );
+// 308 permanent redirect (not a temporary 307): this is a stable legacy alias,
+// so search engines should transfer link equity to /pages/about and update
+// their index to the canonical URL.
+export default function AboutRedirect() {
+  permanentRedirect("/pages/about");
 }

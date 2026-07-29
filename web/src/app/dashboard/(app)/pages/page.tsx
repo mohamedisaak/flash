@@ -1,10 +1,21 @@
 "use client";
 import { CrudSection } from "@/components/dashboard/crud/crud-section";
-interface Row { id: number; key: string; key_display: string; title: string; content: string; is_active: boolean; }
+interface Row {
+  id: number;
+  key: string;
+  key_display: string;
+  title: string;
+  content: string;
+  is_active: boolean;
+}
 export default function PagesPage() {
   return (
     <CrudSection<Row>
-      title="Pages" resourcePath="cms/pages" queryKey="pages" canCreate={false} canDelete={false}
+      title="Pages"
+      resourcePath="cms/pages"
+      queryKey="pages"
+      canCreate={false}
+      canDelete={false}
       columns={[
         { header: "Page", render: (r) => r.key_display },
         { header: "Title", render: (r) => r.title },

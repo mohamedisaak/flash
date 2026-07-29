@@ -18,7 +18,9 @@ function SmallItem({ a }: { a: ArticleListItem }) {
       </div>
       <div className="min-w-0">
         <Badge variant="accent">{a.category.name}</Badge>
-        <h4 className="mt-1 line-clamp-2 font-bold leading-snug group-hover:text-brand">{a.title}</h4>
+        <h4 className="mt-1 line-clamp-2 font-bold leading-snug group-hover:text-brand">
+          {a.title}
+        </h4>
         <p className="mt-1 text-xs text-[var(--muted)]">
           {a.author.full_name || a.author.username} · {formatDate(a.published_at)}
         </p>
@@ -55,17 +57,27 @@ export function SectionBlock({
         <Link href={`/articles/${lead.slug}`} className="group block">
           <div className="relative aspect-[16/10] w-full overflow-hidden rounded bg-gray-100">
             {leadImg && (
-              <Image src={leadImg} alt={lead.title} fill sizes="(max-width:768px) 100vw, 500px" className="object-cover transition group-hover:scale-105" />
+              <Image
+                src={leadImg}
+                alt={lead.title}
+                fill
+                sizes="(max-width:768px) 100vw, 500px"
+                className="object-cover transition group-hover:scale-105"
+              />
             )}
             <div className="absolute left-3 top-3">
               <Badge variant="accent">{lead.category.name}</Badge>
             </div>
           </div>
-          <h3 className="mt-3 text-xl font-extrabold leading-snug group-hover:text-brand">{lead.title}</h3>
+          <h3 className="mt-3 text-xl font-extrabold leading-snug group-hover:text-brand">
+            {lead.title}
+          </h3>
           <p className="mt-1 text-sm text-[var(--muted)]">
             {lead.author.full_name || lead.author.username} · {formatDate(lead.published_at)}
           </p>
-          {lead.excerpt && <p className="mt-2 line-clamp-3 text-sm text-[var(--muted)]">{lead.excerpt}</p>}
+          {lead.excerpt && (
+            <p className="mt-2 line-clamp-3 text-sm text-[var(--muted)]">{lead.excerpt}</p>
+          )}
         </Link>
 
         {/* Smaller items */}

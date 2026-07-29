@@ -79,7 +79,10 @@ export function ArticleForm({
       </Field>
 
       <Field label="Content" error={errors.content?.message}>
-        <TiptapEditor value={content} onChange={(html) => setValue("content", html, { shouldValidate: true })} />
+        <TiptapEditor
+          value={content}
+          onChange={(html) => setValue("content", html, { shouldValidate: true })}
+        />
       </Field>
 
       <div className="grid gap-5 sm:grid-cols-2">

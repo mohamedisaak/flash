@@ -234,9 +234,16 @@ is added phase by phase.
       SSR/ISR, metadata + JSON-LD) **and** dashboards (Phase 5b: JWT login,
       role-gated shell, article CRUD with Tiptap + RHF + Zod, scheduling,
       overview stats). Builds clean (typecheck + next build).
-- [ ] Phase 6 — Mobile app  ← next
-- [ ] Phase 7 — Notifications & analytics
-- [ ] Phase 8 — DevOps, CI/CD, security, testing
+- [x] Phase 5c — full CMS admin (see section below)
+- [x] News aggregation — `apps/aggregation` + `/dashboard/news-ingestion`
+      (added on request; see section below)
+- [x] Phase 6 — Mobile app (Expo) — MVP (see section below)
+- [ ] Phase 7 — Notifications & analytics  ← next
+- [~] Phase 8 — DevOps, security, deployment — **deployment done**: Docker
+  images (backend + web), Render Blueprint (`render.yaml`), gunicorn/uvicorn +
+  WhiteNoise, persistent media disk, prod security hardening + SECRET_KEY guard,
+  `DEPLOYMENT.md` + `teaching/28-deployment/`. Remaining: CI/CD (GitHub Actions),
+  optional nginx compose for non-Render/self-hosted targets.
 
 This plan supersedes the earlier draft that was stored outside the repo at
 `~/.claude/plans/keen-mixing-spark.md`.
@@ -346,6 +353,40 @@ config-driven `CrudSection` (list + add/edit modal + delete, JSON or multipart
 upload) so each section is a few lines. Dashboard shows platform-wide stat
 tiles. 61 API paths; 37 backend tests pass; web build clean (26 routes).
 
+### News aggregation (added on request)
+
+Backend `apps/aggregation`: a code-defined source registry (`sources.py`) of
+Kenyan sources (Nation, Standard, Tuko, Kenyans via RSS; Citizen via its
+news-sitemap; The Star via per-site Google-News RSS), international RSS (BBC, CNN,
+Al Jazeera, Guardian), and global news APIs (NewsAPI/GNews/NewsData, activated
+only when a key is in env). Three fetch mechanisms normalised to a `FeedItem`:
+RSS (`feedparser`), news sitemaps (regex parse of `sitemap-news.xml` → direct
+URLs), and JSON APIs (stdlib `urllib`). Google-News links (The Star) are decoded
+to the real publisher URL via Google's `batchexecute` (`google_news.py`) so full
+extraction works. Stores
+**metadata + a link** in `AggregatedArticle` (deduped on `source + external_id`),
+never full text; `IngestionRun` records run history. `services.py` runs
+ingestion (per-source failure isolation), moderates (hide/delete by source), and
+promotes an item into an editorial `Article` — as a **draft** or **published**
+(source credit kept, outbound link dropped, lead image lazily downloaded).
+**Full-article extraction** (`extract.py`, trafilatura) fetches whole bodies on
+demand (on publish/import, or a per-row/bulk "Fetch full content" action; not
+during the run, to stay fast) as clean escaped paragraph HTML; membership sites
+(Nation, Standard, flagged `paywalled`) are skipped and fall back to the summary.
+All logic is reusable from an optional Celery task (`run_scheduled_ingestion`,
+not scheduled by default). Staff-only DRF API under `/aggregation/` (run, list/filter,
+per-row + bulk publish/import/hide/delete, hide/delete by source, stats, runs).
+8 new tests (45 total pass).
+
+Frontend `/dashboard/news-ingestion`: a richer take on the reference job-board
+panel — run ingestion (sources grouped by region with availability, max-items,
+dry-run, live per-source report) **plus** a full browse/moderate table (search,
+source/status filters, select-all, per-row + bulk publish-to-site / import-draft
+/ hide / delete), bulk moderation + removal by source, and run history. Nav entry
+under News▸News Ingestion. Typecheck + build clean.
+
+Teaching: `teaching/40-news-aggregation/` (concept lesson + 4 file explainers).
+
 ### Phase 5b — what shipped (dashboards)
 
 - Auth: Zustand session store + token helpers (`auth-store.ts`); authenticated
@@ -360,9 +401,26 @@ tiles. 61 API paths; 37 backend tests pass; web build clean (26 routes).
 - Verified: `pnpm typecheck` + `pnpm build` pass (8 routes incl. the dashboard).
 - Teaching: `18-zustand/` (1 lesson) + `12-nextjs/07-dashboard-and-forms.md`.
 
-### Phase 6 — next up
+### Phase 6 — mobile app (Expo) — MVP shipped
 
-Mobile app (Expo / React Native + Expo Router): home, categories, search,
-bookmarks, notifications, breaking/live/video, offline reading — reusing the DRF
-API — with paired lessons in `teaching/19-react-native/`, `20-expo/`,
-`21-nativewind/`, `22-mobile-architecture/`.
+A second frontend over the **same** DRF API (no new backend), in [`mobile/`](mobile/).
+Stack: **Expo SDK 54 + Expo Router** (file-based nav, typed routes) + **NativeWind**
+(Tailwind on native) + **TanStack Query** + **AsyncStorage** + `expo-image`.
+
+Screens: **Home** (breaking banner + featured hero + latest feed, pull-to-refresh),
+**Categories** → category articles, **Search** (same full-text `/search/` API),
+**Article** detail (hero image, HTML→text body, **Save** bookmark + **Share**),
+**Saved** (bookmarks in AsyncStorage, offline). `src/lib/` mirrors the web client
+(`api.ts`, `types.ts`, `env.ts` with per-platform API host, `bookmarks.ts`).
+
+Verified: `tsc --noEmit` clean; `expo export -p ios` bundles (1,565 modules).
+Run: `cd mobile && npm install && npx expo start`. Teaching: `19-react-native/`,
+`20-expo/`, `21-nativewind/`, `22-mobile-architecture/` (all built).
+
+**Backlog (deferred to Phase 7+):** push notifications (`expo-notifications`),
+video/live playback (`expo-av`), infinite scroll, full-article offline caching.
+
+### Phase 7 — next up
+
+Notifications & analytics: push notifications to the mobile app + richer
+analytics dashboards. Reuses existing APIs where possible.

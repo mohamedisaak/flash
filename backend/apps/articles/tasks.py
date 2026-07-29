@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 def publish_scheduled_articles() -> int:
     """Publish any scheduled article whose time has come. Returns the count."""
     now = timezone.now()
-    count = Article.objects.filter(
-        status=ArticleStatus.SCHEDULED, published_at__lte=now
-    ).update(status=ArticleStatus.PUBLISHED)
+    count = Article.objects.filter(status=ArticleStatus.SCHEDULED, published_at__lte=now).update(
+        status=ArticleStatus.PUBLISHED
+    )
     if count:
         logger.info("publish_scheduled_articles: published %d article(s)", count)
     return count

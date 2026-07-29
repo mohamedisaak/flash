@@ -107,3 +107,60 @@ export interface PhotoGallery {
   published_at: string | null;
   created_at: string;
 }
+
+export interface SiteSettings {
+  site_name: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_address: string;
+  about_us: string;
+  logo: string | null;
+  favicon: string | null;
+  theme_color_1: string;
+  theme_color_2: string;
+  google_analytics_id: string;
+  date_status: boolean;
+  email_status: boolean;
+  news_ticker_status: boolean;
+  news_ticker_total: number;
+}
+
+export interface StaticPage {
+  id: number;
+  key: string;
+  key_display: string;
+  title: string;
+  content: string;
+  is_active: boolean;
+}
+
+export interface FaqItem {
+  id: number;
+  question: string;
+  answer: string;
+  order: number;
+  is_active: boolean;
+}
+
+export type AdPlacement = "header" | "sidebar" | "in_content" | "mobile" | "popup";
+
+export type AdEffect = "none" | "pulse" | "glow" | "blink";
+export type OverlayPosition = "top" | "center" | "bottom";
+
+export type ImageFit = "contain" | "cover";
+
+export interface Advertisement {
+  id: number;
+  name: string;
+  placement: AdPlacement;
+  image: string | null;
+  html: string;
+  target_url: string;
+  left_text: string;
+  right_text: string;
+  overlay_text: string;
+  overlay_position: OverlayPosition;
+  image_fit: ImageFit;
+  effect: AdEffect;
+  is_active: boolean;
+}

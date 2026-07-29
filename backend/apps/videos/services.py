@@ -29,8 +29,14 @@ def probe_duration(input_path: str) -> int:
     """Return the integer duration in seconds of a media file."""
     result = subprocess.run(
         [
-            "ffprobe", "-v", "error", "-show_entries", "format=duration",
-            "-of", "json", input_path,
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "json",
+            input_path,
         ],
         capture_output=True,
         text=True,
@@ -44,8 +50,15 @@ def extract_thumbnail(input_path: str, output_path: str, at_seconds: int = 1) ->
     """Write a single poster frame taken ``at_seconds`` into the video."""
     subprocess.run(
         [
-            "ffmpeg", "-y", "-ss", str(at_seconds), "-i", input_path,
-            "-frames:v", "1", output_path,
+            "ffmpeg",
+            "-y",
+            "-ss",
+            str(at_seconds),
+            "-i",
+            input_path,
+            "-frames:v",
+            "1",
+            output_path,
         ],
         capture_output=True,
         check=True,
@@ -62,10 +75,20 @@ def transcode_hls(input_path: str, output_dir: str) -> str:
     playlist = f"{output_dir}/index.m3u8"
     subprocess.run(
         [
-            "ffmpeg", "-y", "-i", input_path,
-            "-c:v", "h264", "-c:a", "aac",
-            "-hls_time", "6", "-hls_playlist_type", "vod",
-            "-hls_segment_filename", f"{output_dir}/seg_%03d.ts",
+            "ffmpeg",
+            "-y",
+            "-i",
+            input_path,
+            "-c:v",
+            "h264",
+            "-c:a",
+            "aac",
+            "-hls_time",
+            "6",
+            "-hls_playlist_type",
+            "vod",
+            "-hls_segment_filename",
+            f"{output_dir}/seg_%03d.ts",
             playlist,
         ],
         capture_output=True,

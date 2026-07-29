@@ -101,4 +101,12 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
 class BreakingNewsAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = BreakingNewsAlert
-        fields = ["id", "headline", "article", "external_url", "is_active", "starts_at", "expires_at"]
+        fields = [
+            "id",
+            "headline",
+            "article",
+            "external_url",
+            "is_active",
+            "starts_at",
+            "expires_at",
+        ]

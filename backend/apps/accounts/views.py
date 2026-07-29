@@ -7,8 +7,10 @@ Login/refresh are handled by simplejwt's built-in views, wired in urls.py. See
 
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, viewsets
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.common.permissions import IsEditorialStaff
+from apps.common.permissions import IsAdmin
 
 from .models import Role
 from .serializers import AdminUserSerializer, RegisterSerializer, UserSerializer
@@ -16,15 +18,29 @@ from .serializers import AdminUserSerializer, RegisterSerializer, UserSerializer
 User = get_user_model()
 
 
+class LoginView(TokenObtainPairView):
+    """POST /api/v1/auth/login/ — obtain a JWT pair.
+
+    Rate-limited (``login`` scope, per-IP) so it can't be used for password
+    brute-forcing. See settings ``DEFAULT_THROTTLE_RATES``.
+    """
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+
 class RegisterView(generics.CreateAPIView):
     """POST /api/v1/auth/register/ — create a new subscriber account.
 
     ``AllowAny`` because, by definition, the caller isn't logged in yet.
+    Rate-limited (``register`` scope) to stop mass/automated sign-ups.
     """
 
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"
 
 
 class MeView(generics.RetrieveUpdateAPIView):
@@ -42,15 +58,18 @@ class MeView(generics.RetrieveUpdateAPIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """Staff-only user management (the admin's "Author List").
+    """Admin-only user management (the admin's "Author List").
 
-    Editors/admins can list, create, edit and remove newsroom accounts. Defaults
-    the ``role`` to Author when creating (the admin form can override it).
+    Creating, editing, deleting accounts and assigning roles is restricted to
+    site administrators (``IsAdmin``) — never ordinary editorial staff — so a
+    lower-privilege account cannot create users or escalate its own role.
+    Defaults the ``role`` to Author when creating (the admin form can override
+    it, subject to the serializer's role-assignment guard).
     """
 
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
-    permission_classes = [IsEditorialStaff]
+    permission_classes = [IsAdmin]
     filterset_fields = ["role", "status"]
     search_fields = ["username", "email", "first_name", "last_name"]
 

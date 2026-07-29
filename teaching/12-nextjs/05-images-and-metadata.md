@@ -59,6 +59,39 @@ and modern formats. Two rules:
 - Use `priority` on the above-the-fold hero image so it loads eagerly (helps LCP,
   a Core Web Vital).
 
+### Gotcha: the private-IP SSRF guard (Next 16)
+
+Whitelisting the host is necessary but **not sufficient** in dev. Next 16's image
+optimizer refuses to fetch an upstream image whose host resolves to a *private
+IP* — `localhost`, `127.0.0.1`, `::1` — because a server-side fetch to an
+attacker-chosen private address is a classic **SSRF** (Server-Side Request
+Forgery) vector. Our Django media server in dev lives at `localhost:8000`, so the
+optimizer returns a `400` and the browser shows a broken-image icon, with this in
+the dev log:
+
+```
+⨯ upstream image http://localhost:8000/media/… resolved to private ip ["::1","127.0.0.1"]
+```
+
+The whitelist matched — the guard fired *after*. The fix is an explicit,
+**dev-only** opt-in:
+
+```ts
+const isDev = process.env.NODE_ENV === "development";
+const nextConfig = {
+  images: {
+    dangerouslyAllowLocalIP: isDev, // never in production
+    remotePatterns: [/* … */],
+  },
+};
+```
+
+Two things make this safe: it's gated to development, and in production the media
+host is a real public domain/CDN, so the guard never trips there anyway. The
+`dangerously` prefix is Next's convention for "you're switching off a safety —
+be sure." A change to `next.config.ts` is **not** hot-reloaded; restart the dev
+server for it to take effect.
+
 ## 5. Common mistakes
 
 - Same `<title>` on every page → poor SEO. Use `generateMetadata`.

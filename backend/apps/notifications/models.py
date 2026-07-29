@@ -35,7 +35,9 @@ class Notification(TimeStampedModel):
         related_name="notifications",
     )
     channel = models.CharField(max_length=12, choices=NotificationChannel.choices, db_index=True)
-    type = models.CharField(max_length=12, choices=NotificationType.choices, default=NotificationType.SYSTEM)
+    type = models.CharField(
+        max_length=12, choices=NotificationType.choices, default=NotificationType.SYSTEM
+    )
 
     title = models.CharField(max_length=255)
     body = models.TextField(blank=True)
@@ -46,7 +48,12 @@ class Notification(TimeStampedModel):
 
     class Meta:
         ordering = ("-created_at",)
-        indexes = [models.Index(fields=["recipient", "is_read"])]
+        indexes = [
+            models.Index(fields=["recipient", "is_read"]),
+            # The list endpoint is always scoped to the recipient and ordered
+            # newest-first; this composite serves that scan + sort directly.
+            models.Index(fields=["recipient", "-created_at"]),
+        ]
 
     def __str__(self) -> str:
         return f"{self.title} -> {self.recipient_id}"

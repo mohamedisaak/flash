@@ -12,6 +12,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.crypto import get_random_string
 from rest_framework import serializers
 
+from .models import Role
+
 User = get_user_model()
 
 
@@ -70,10 +72,30 @@ class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "username", "email", "full_name", "first_name", "last_name",
-            "phone", "avatar", "bio", "role", "status", "password", "date_joined",
+            "id",
+            "username",
+            "email",
+            "full_name",
+            "first_name",
+            "last_name",
+            "phone",
+            "avatar",
+            "bio",
+            "role",
+            "status",
+            "password",
+            "date_joined",
         ]
         read_only_fields = ["date_joined"]
+
+    def validate_role(self, value):
+        """Only a super admin can grant the super-admin role — an ordinary admin
+        cannot mint an account more privileged than themselves."""
+        request = self.context.get("request")
+        actor = getattr(request, "user", None)
+        if value == Role.SUPER_ADMIN and not (actor and actor.role == Role.SUPER_ADMIN):
+            raise serializers.ValidationError("Only a super admin can assign the super-admin role.")
+        return value
 
     def create(self, validated_data):
         password = validated_data.pop("password", "") or get_random_string(16)

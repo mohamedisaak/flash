@@ -6,6 +6,10 @@ underlying technologies).
 
 ## Contents
 
+- [Development guide](DEVELOPMENT.md) — setup, daily commands, conventions,
+  recipes, and troubleshooting. **Start here if you're new.**
+- [Security posture](security.md) — OWASP-aligned controls and the production
+  hardening checklist.
 - [Architecture](architecture.md) — system diagram, request lifecycle, infra
   choices, scaling path.
 - [Database ERD](database-erd.md) — entity-relationship diagram of the schema.

@@ -84,7 +84,9 @@ class Article(TimeStampedModel, SEOFields):
     # --- Media ---
     featured_image = models.ImageField(upload_to="articles/%Y/%m/", blank=True, null=True)
     image_caption = models.CharField(max_length=255, blank=True)
-    source = models.CharField(max_length=255, blank=True, help_text="Wire/agency credit, e.g. Reuters.")
+    source = models.CharField(
+        max_length=255, blank=True, help_text="Wire/agency credit, e.g. Reuters."
+    )
 
     # --- Workflow ---
     status = models.CharField(

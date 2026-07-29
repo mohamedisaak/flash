@@ -1,10 +1,18 @@
 "use client";
 import { CrudSection } from "@/components/dashboard/crud/crud-section";
-interface Row { id: number; question: string; yes_votes: number; no_votes: number; is_active: boolean; }
+interface Row {
+  id: number;
+  question: string;
+  yes_votes: number;
+  no_votes: number;
+  is_active: boolean;
+}
 export default function PollsPage() {
   return (
     <CrudSection<Row>
-      title="Online Polls" resourcePath="cms/polls" queryKey="polls"
+      title="Online Polls"
+      resourcePath="cms/polls"
+      queryKey="polls"
       columns={[
         { header: "Question", render: (r) => r.question },
         { header: "Yes Vote", render: (r) => r.yes_votes },

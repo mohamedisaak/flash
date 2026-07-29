@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 
+from . import services
 from .models import Category, Tag
 
 
@@ -13,8 +14,13 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    # Show how many articles are in the category without a second request.
-    article_count = serializers.IntegerField(source="articles.count", read_only=True)
+    # How many articles are in the category. Served from a queryset annotation
+    # when present, else a cached count — never a per-row COUNT query. See
+    # apps/categories/services.py.
+    article_count = serializers.SerializerMethodField()
+
+    def get_article_count(self, obj) -> int:
+        return services.article_count(obj)
 
     class Meta:
         model = Category

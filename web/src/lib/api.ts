@@ -14,11 +14,16 @@
  */
 import { env } from "./env";
 import type {
+  Advertisement,
+  AdPlacement,
   Article,
   ArticleListItem,
   Category,
+  FaqItem,
   Paginated,
   PhotoGallery,
+  SiteSettings,
+  StaticPage,
   Tag,
   Video,
 } from "./types";
@@ -58,7 +63,12 @@ const EMPTY_PAGE: Paginated<never> = { count: 0, next: null, previous: null, res
 
 export const api = {
   async listArticles(params?: FetchOptions["searchParams"]): Promise<Paginated<ArticleListItem>> {
-    return (await getJson<Paginated<ArticleListItem>>("/articles/", { revalidate: 60, searchParams: params })) ?? EMPTY_PAGE;
+    return (
+      (await getJson<Paginated<ArticleListItem>>("/articles/", {
+        revalidate: 60,
+        searchParams: params,
+      })) ?? EMPTY_PAGE
+    );
   },
 
   async getArticle(slug: string): Promise<Article | null> {
@@ -66,7 +76,8 @@ export const api = {
   },
 
   async listCategories(): Promise<Category[]> {
-    const page = await getJson<Paginated<Category>>("/categories/", { revalidate: 3600 });
+    // Short-ish cache so admin changes to category order/names show quickly.
+    const page = await getJson<Paginated<Category>>("/categories/", { revalidate: 120 });
     return page?.results ?? [];
   },
 
@@ -75,7 +86,12 @@ export const api = {
   },
 
   async articlesInCategory(slug: string): Promise<Paginated<ArticleListItem>> {
-    return (await getJson<Paginated<ArticleListItem>>("/articles/", { revalidate: 60, searchParams: { category: slug } })) ?? EMPTY_PAGE;
+    return (
+      (await getJson<Paginated<ArticleListItem>>("/articles/", {
+        revalidate: 60,
+        searchParams: { category: slug },
+      })) ?? EMPTY_PAGE
+    );
   },
 
   /** JSON-LD for an article, built server-side by the backend's SEO app. */
@@ -93,7 +109,10 @@ export const api = {
   },
 
   async listTags(): Promise<Tag[]> {
-    const page = await getJson<Paginated<Tag>>("/tags/", { revalidate: 3600, searchParams: { page_size: 40 } });
+    const page = await getJson<Paginated<Tag>>("/tags/", {
+      revalidate: 3600,
+      searchParams: { page_size: 40 },
+    });
     return page?.results ?? [];
   },
 
@@ -107,16 +126,58 @@ export const api = {
   },
 
   async listVideos(): Promise<Video[]> {
-    const page = await getJson<Paginated<Video>>("/videos/", { revalidate: 300, searchParams: { page_size: 12 } });
+    const page = await getJson<Paginated<Video>>("/videos/", {
+      revalidate: 300,
+      searchParams: { page_size: 12 },
+    });
     return page?.results ?? [];
   },
 
   async listGalleries(): Promise<PhotoGallery[]> {
-    const page = await getJson<Paginated<PhotoGallery>>("/galleries/", { revalidate: 300, searchParams: { page_size: 24 } });
+    const page = await getJson<Paginated<PhotoGallery>>("/galleries/", {
+      revalidate: 300,
+      searchParams: { page_size: 24 },
+    });
     return page?.results ?? [];
   },
 
   async getGallery(slug: string): Promise<PhotoGallery | null> {
     return getJson<PhotoGallery>(`/galleries/${slug}/`, { revalidate: 300 });
+  },
+
+  /** Global site settings (singleton) — site name, contact info, footer blurb.
+   *  Short cache so admin theme/settings edits show up quickly. */
+  async getSiteSettings(): Promise<SiteSettings | null> {
+    return getJson<SiteSettings>("/cms/settings/", { revalidate: 15 });
+  },
+
+  /** An editable static page (about/contact/terms/privacy/…) by its key.
+   *  Short cache so admin content edits show up quickly. */
+  async getStaticPage(key: string): Promise<StaticPage | null> {
+    const page = await getJson<Paginated<StaticPage>>("/cms/pages/", {
+      revalidate: 60,
+      searchParams: { key },
+    });
+    const p = page?.results?.[0];
+    return p && p.is_active ? p : null;
+  },
+
+  /** Active FAQ entries (question/answer), ordered. */
+  async listFaqs(): Promise<FaqItem[]> {
+    const page = await getJson<Paginated<FaqItem>>("/cms/faqs/", {
+      revalidate: 300,
+      searchParams: { is_active: "true", page_size: 100 },
+    });
+    return page?.results ?? [];
+  },
+
+  /** Active ads for a placement slot (header/sidebar/in_content/…).
+   *  Short cache so admin ad edits (image, overlay, effect) show up quickly. */
+  async listAds(placement: AdPlacement): Promise<Advertisement[]> {
+    const page = await getJson<Paginated<Advertisement>>("/ads/", {
+      revalidate: 15,
+      searchParams: { placement, is_active: "true", page_size: 5 },
+    });
+    return page?.results ?? [];
   },
 };

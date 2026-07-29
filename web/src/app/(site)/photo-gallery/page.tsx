@@ -7,7 +7,12 @@ import { env } from "@/lib/env";
 import { formatDate, mediaUrl } from "@/lib/utils";
 
 export const revalidate = 300;
-export const metadata: Metadata = { title: "Photo Gallery" };
+export const metadata: Metadata = {
+  title: "Photo Gallery",
+  description: "Browse the latest news photo galleries and picture stories.",
+  alternates: { canonical: `${env.siteUrl}/photo-gallery` },
+  openGraph: { title: "Photo Gallery", type: "website", url: `${env.siteUrl}/photo-gallery` },
+};
 
 export default async function PhotoGalleryPage() {
   const galleries = await api.listGalleries();
@@ -19,7 +24,9 @@ export default async function PhotoGalleryPage() {
     <div>
       <h1 className="text-3xl font-extrabold">Photo Gallery</h1>
       <nav className="mt-2 border-b border-[var(--border)] pb-3 text-sm text-[var(--muted)]">
-        <Link href="/" className="hover:text-brand">Home</Link>
+        <Link href="/" className="hover:text-brand">
+          Home
+        </Link>
         <span className="mx-2">/</span>
         <span>Photo Gallery</span>
       </nav>
@@ -33,9 +40,19 @@ export default async function PhotoGalleryPage() {
             return (
               <figure key={img.id} className="group">
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded bg-gray-100">
-                  {src && <Image src={src} alt={img.caption || img.gallery} fill sizes="300px" className="object-cover transition group-hover:scale-105" />}
+                  {src && (
+                    <Image
+                      src={src}
+                      alt={img.caption || img.gallery}
+                      fill
+                      sizes="300px"
+                      className="object-cover transition group-hover:scale-105"
+                    />
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-2xl text-white">+</span>
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-2xl text-white">
+                      +
+                    </span>
                   </div>
                 </div>
                 <figcaption className="mt-2 font-semibold">{img.caption || img.gallery}</figcaption>

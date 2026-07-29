@@ -9,7 +9,10 @@ import { ArticleForm, type ArticleFormValues } from "@/components/dashboard/arti
 
 export default function NewArticlePage() {
   const router = useRouter();
-  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: authApi.listCategories });
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: authApi.listCategories,
+  });
 
   const mutation = useMutation({
     mutationFn: (v: ArticleFormValues) => authApi.createArticle(formValuesToPayload(v)),

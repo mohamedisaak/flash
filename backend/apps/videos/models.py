@@ -24,7 +24,9 @@ class Video(TimeStampedModel, SEOFields):
     thumbnail = models.ImageField(upload_to="videos/thumbs/%Y/%m/", blank=True, null=True)
     video_file = models.FileField(upload_to="videos/source/%Y/%m/")
     # Filled in by the processing pipeline in a later phase.
-    hls_playlist = models.CharField(max_length=500, blank=True, help_text="Path/URL to .m3u8 master playlist.")
+    hls_playlist = models.CharField(
+        max_length=500, blank=True, help_text="Path/URL to .m3u8 master playlist."
+    )
     duration_seconds = models.PositiveIntegerField(default=0)
 
     category = models.ForeignKey(

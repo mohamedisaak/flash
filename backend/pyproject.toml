@@ -15,6 +15,15 @@ dependencies = [
     "drf-spectacular>=0.28",
     "celery[redis]>=5.4",
     "django-cors-headers>=4.6",
+    "feedparser>=6.0",
+    "trafilatura>=2.1.0",
+    "nh3>=0.3.6",
+    # --- Production serving ---
+    # gunicorn = process manager; uvicorn worker = ASGI server (config.asgi).
+    # whitenoise = serve collected static files from the app (no nginx needed).
+    "gunicorn>=23.0",
+    "uvicorn[standard]>=0.34",
+    "whitenoise[brotli]>=6.8",
 ]
 
 [dependency-groups]
@@ -23,6 +32,7 @@ dev = [
     "pytest>=8.0",
     "pytest-django>=4.9",
     "factory-boy>=3.3",
+    "ruff>=0.8",
 ]
 
 # Optional: S3/MinIO-compatible object storage for media in production.
@@ -36,3 +46,32 @@ s3 = [
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py", "*_test.py"]
+
+# --- Linting & formatting -------------------------------------------------
+# Ruff is both the linter and the formatter (replaces flake8 + isort + black).
+#   uv run ruff check .          # lint
+#   uv run ruff check . --fix    # lint + safe autofixes (unused imports, etc.)
+#   uv run ruff format .         # format
+# Line length is intentionally generous (100) to match the existing style and
+# avoid churn; E501 is not hard-enforced. Auto-generated migrations are excluded.
+[tool.ruff]
+line-length = 100
+extend-exclude = ["**/migrations/*"]
+# Target 3.13 syntax even though we run on 3.14, so ruff keeps the widely-known
+# forms — parenthesised `except (A, B)` and quoted forward refs — instead of
+# 3.14-only sugar (PEP 758, PEP 649) that a reader might mistake for a bug.
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "DJ"]
+ignore = [
+    "E501",  # line length: the formatter wraps; don't fail CI on long strings
+    "B008",  # calls in argument defaults — a normal DRF/Django pattern
+]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings.py" = ["F403", "F405", "E402"]  # env-driven star config
+"**/tests/**" = ["B011"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]

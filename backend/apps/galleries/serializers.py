@@ -29,7 +29,14 @@ class PhotoGallerySerializer(serializers.ModelSerializer):
     class Meta:
         model = PhotoGallery
         fields = [
-            "id", "title", "slug", "description", "category", "category_id",
-            "images", "published_at", "created_at",
+            "id",
+            "title",
+            "slug",
+            "description",
+            "category",
+            "category_id",
+            "images",
+            "published_at",
+            "created_at",
         ]
         read_only_fields = ["slug", "category", "created_at"]

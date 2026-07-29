@@ -36,15 +36,21 @@ class SearchView(ListAPIView):
 
     def get_queryset(self):
         query = self.request.query_params.get("q", "")
-        results = get_search_backend().search_articles(query)
-        # Log the query + how many hits it produced (skip empty queries).
-        if query.strip():
+        return get_search_backend().search_articles(query)
+
+    def list(self, request, *args, **kwargs):
+        # Run the (potentially expensive full-text) query once: the paginator
+        # already computes the total, so we log that count instead of executing
+        # a second COUNT over the same query.
+        response = super().list(request, *args, **kwargs)
+        query = request.query_params.get("q", "").strip()
+        if query:
             SearchQueryLog.objects.create(
-                query=query.strip()[:255],
-                results_count=results.count(),
-                session_key=self.request.session.session_key or "",
+                query=query[:255],
+                results_count=response.data.get("count", 0),
+                session_key=request.session.session_key or "",
             )
-        return results
+        return response
 
     @extend_schema(parameters=[_Q])
     def get(self, request, *args, **kwargs):

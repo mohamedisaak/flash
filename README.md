@@ -42,17 +42,21 @@ The build proceeds in phases (see [`PLAN.md`](PLAN.md)). **Done so far:**
 
 Next up: **Phase 6** — Expo / React Native mobile app.
 
-## Quick start (backend)
+## Quick start
+
+New here? Read the **[Development guide](docs/DEVELOPMENT.md)** — setup, daily
+commands, conventions, recipes, and troubleshooting for all three surfaces.
 
 ```bash
-cd backend
-uv sync
-uv run python manage.py migrate        # SQLite fallback — zero infra needed
-uv run python manage.py createsuperuser
-uv run python manage.py runserver      # http://127.0.0.1:8000/admin/
+make install         # backend (uv) + web (pnpm) + mobile (npm)
+make dev-backend     # Django API on :8000   (in its own terminal)
+make dev-web         # Next.js on :3000      (in another)
+make dev-mobile      # Expo dev server       (in another)
+make verify          # run every quality gate before you commit
 ```
 
-For the Postgres + Redis workflow, see [`backend/README.md`](backend/README.md).
+Run `make help` for all tasks. Backend-only quick start and the Postgres + Redis
+workflow are in [`backend/README.md`](backend/README.md).
 
 ## Learn it
 
@@ -61,6 +65,7 @@ Start at the [curriculum index](teaching/README.md), then the
 
 ## Key documents
 
+- [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — **developer onboarding & workflow.**
 - [`PLAN.md`](PLAN.md) — full phase roadmap and decisions.
 - [`CLAUDE.md`](CLAUDE.md) — engineering + teaching rules for contributors/AI.
 - [`docs/architecture.md`](docs/architecture.md) — system architecture.

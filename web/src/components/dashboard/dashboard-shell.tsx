@@ -71,15 +71,18 @@ function NavGroupItem({ group, pathname }: { group: NavGroup; pathname: string }
 // Full admin navigation (editors/admins).
 const ADMIN_NAV: NavEntry[] = [
   { href: "/dashboard", label: "Dashboard", icon: "🏠" },
+  { href: "/dashboard/analytics", label: "Analytics", icon: "📊" },
   { href: "/dashboard/settings", label: "Setting", icon: "⚙️" },
   { href: "/dashboard/authors", label: "Author List", icon: "👥" },
   { href: "/dashboard/ads", label: "Advertisements", icon: "📢" },
   {
-    label: "News", icon: "🗞",
+    label: "News",
+    icon: "🗞",
     children: [
       { href: "/dashboard/categories", label: "Categories" },
       { href: "/dashboard/subcategories", label: "SubCategories" },
       { href: "/dashboard/articles", label: "Posts" },
+      { href: "/dashboard/news-ingestion", label: "News Ingestion" },
     ],
   },
   { href: "/dashboard/photo-gallery", label: "Photo Gallery", icon: "🖼" },
@@ -112,7 +115,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       setStatus("anonymous");
       return;
     }
-    authApi.me().then((u) => active && setUser(u)).catch(() => active && setStatus("anonymous"));
+    authApi
+      .me()
+      .then((u) => active && setUser(u))
+      .catch(() => active && setStatus("anonymous"));
     return () => {
       active = false;
     };

@@ -58,12 +58,34 @@ When an article doesn't exist, the page calls `notFound()`, which renders
 [`app/not-found.tsx`](../../web/src/app/not-found.tsx) and returns a real 404
 status — important so search engines don't index missing pages.
 
+## 5b. One dynamic route, many CMS pages
+
+A common real use of dynamic segments: **editable static pages**. Instead of a
+hardcoded file per page (About, Contact, Terms, Privacy), we have one route
+[`app/(site)/pages/[key]/page.tsx`](../../web/src/app/(site)/pages/[key]/page.tsx)
+that looks the `key` up in the CMS:
+
+```tsx
+const { key } = await params;             // "about", "contact", …
+const page = await api.getStaticPage(key);
+if (!page) notFound();                     // unknown key OR admin set it "Hide"
+```
+
+Editors change the title/body in the dashboard's *Pages* section and it updates
+here on ISR — no redeploy. `generateStaticParams` pre-renders the known keys for
+speed. The lesson: when N pages share a shape and differ only in *data*, prefer
+one data-driven dynamic route over N near-identical files. (This replaced an
+early bug where About/FAQ/Contact all hardcoded `href="/about"` and rendered the
+same file.)
+
 ## 6. Common mistakes
 
 - Forgetting to `await params` in Next 16 → type errors / undefined values.
 - Expecting `/articles` to be swallowed by `[category]` (it isn't — specificity
   wins).
 - Returning `200` for missing content instead of calling `notFound()`.
+- Hardcoding a page per nav link (and pointing several at the same URL) when they
+  should be one CMS-driven dynamic route.
 
 ## 7. Exercises
 

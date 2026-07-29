@@ -67,6 +67,24 @@ export const AD_PLACEMENTS = [
   { value: "popup", label: "Popup" },
 ];
 
+export const AD_OVERLAY_POSITIONS = [
+  { value: "bottom", label: "Bottom" },
+  { value: "center", label: "Center" },
+  { value: "top", label: "Top" },
+];
+
+export const AD_IMAGE_FIT = [
+  { value: "contain", label: "Contain (whole image)" },
+  { value: "cover", label: "Cover (fill, may crop)" },
+];
+
+export const AD_EFFECTS = [
+  { value: "none", label: "None" },
+  { value: "pulse", label: "Pulse (gentle)" },
+  { value: "glow", label: "Glow" },
+  { value: "blink", label: "Blink" },
+];
+
 /** Payload for creating/updating an article (write-side field names). */
 export interface ArticleWritePayload {
   title: string;

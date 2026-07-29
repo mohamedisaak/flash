@@ -36,7 +36,11 @@ async function authFetch(path: string, init: RequestInit = {}, retry = true): Pr
   const token = getAccessToken();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  // Only set a JSON content-type for JSON bodies. For FormData (file uploads)
+  // the browser must set `multipart/form-data; boundary=…` itself — forcing
+  // application/json here makes DRF try to JSON-parse the raw file bytes.
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type"))
+    headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const res = await fetch(`${env.apiUrl}${path}`, { ...init, headers });
@@ -85,15 +89,21 @@ export const authApi = {
   },
 
   async createArticle(payload: ArticleWritePayload): Promise<Article> {
-    return json<Article>(await authFetch("/articles/", { method: "POST", body: JSON.stringify(payload) }));
+    return json<Article>(
+      await authFetch("/articles/", { method: "POST", body: JSON.stringify(payload) }),
+    );
   },
 
   async updateArticle(slug: string, payload: ArticleWritePayload): Promise<Article> {
-    return json<Article>(await authFetch(`/articles/${slug}/`, { method: "PATCH", body: JSON.stringify(payload) }));
+    return json<Article>(
+      await authFetch(`/articles/${slug}/`, { method: "PATCH", body: JSON.stringify(payload) }),
+    );
   },
 
   async listCategories(): Promise<Category[]> {
-    const page = await json<Paginated<Category>>(await authFetch("/categories/", { method: "GET" }));
+    const page = await json<Paginated<Category>>(
+      await authFetch("/categories/", { method: "GET" }),
+    );
     return page.results;
   },
 };
@@ -126,7 +136,9 @@ export function resource<T extends { id: number }>(path: string) {
       return json<T>(await authFetch(base, { method: "POST", body: JSON.stringify(payload) }));
     },
     async update(id: number | string, payload: Record<string, unknown>): Promise<T> {
-      return json<T>(await authFetch(`${base}${id}/`, { method: "PATCH", body: JSON.stringify(payload) }));
+      return json<T>(
+        await authFetch(`${base}${id}/`, { method: "PATCH", body: JSON.stringify(payload) }),
+      );
     },
     async remove(id: number | string): Promise<void> {
       const res = await authFetch(`${base}${id}/`, { method: "DELETE" });
@@ -159,6 +171,25 @@ export function singleton<T>(path: string) {
 /** POST a bare action endpoint (e.g. send-email, vote). */
 export async function postAction(path: string): Promise<unknown> {
   return json<unknown>(await authFetch(path, { method: "POST", body: "{}" }));
+}
+
+/**
+ * Authenticated request returning parsed JSON — for endpoints that don't fit the
+ * `resource()` CRUD shape (custom actions like ingestion run/bulk/stats). GET by
+ * default; pass a JSON-serialisable `body` to POST/PATCH.
+ */
+export async function apiRequest<T>(
+  path: string,
+  init: { method?: string; body?: unknown } = {},
+): Promise<T> {
+  const method = init.method ?? "GET";
+  const body =
+    init.body === undefined
+      ? undefined
+      : init.body instanceof FormData
+        ? init.body
+        : JSON.stringify(init.body);
+  return json<T>(await authFetch(path, { method, body }));
 }
 
 export { AuthError };

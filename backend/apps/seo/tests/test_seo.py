@@ -11,8 +11,12 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def published_article(editor, category):
     return Article.objects.create(
-        title="Big Story", author=editor, category=category,
-        excerpt="the standfirst", status="published", published_at=timezone.now(),
+        title="Big Story",
+        author=editor,
+        category=category,
+        excerpt="the standfirst",
+        status="published",
+        published_at=timezone.now(),
     )
 
 

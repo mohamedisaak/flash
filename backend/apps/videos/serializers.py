@@ -21,8 +21,19 @@ class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         fields = [
-            "id", "title", "slug", "description", "thumbnail", "video_file",
-            "hls_playlist", "duration_seconds", "category", "category_id",
-            "tags", "tag_ids", "published_at", "views",
+            "id",
+            "title",
+            "slug",
+            "description",
+            "thumbnail",
+            "video_file",
+            "hls_playlist",
+            "duration_seconds",
+            "category",
+            "category_id",
+            "tags",
+            "tag_ids",
+            "published_at",
+            "views",
         ]
         read_only_fields = ["slug", "hls_playlist", "duration_seconds", "views"]

@@ -12,8 +12,11 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def article(category, editor):
     return Article.objects.create(
-        title="Story", author=editor, category=category,
-        status="published", published_at=timezone.now(),
+        title="Story",
+        author=editor,
+        category=category,
+        status="published",
+        published_at=timezone.now(),
     )
 
 
@@ -46,7 +49,5 @@ def test_moderator_sees_pending_comments(api, editor, subscriber, article):
 
 
 def test_anonymous_cannot_comment(api, article):
-    resp = api.post(
-        "/api/v1/comments/", {"article": article.id, "body": "hi"}, format="json"
-    )
+    resp = api.post("/api/v1/comments/", {"article": article.id, "body": "hi"}, format="json")
     assert resp.status_code in (401, 403)

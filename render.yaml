@@ -1,0 +1,142 @@
+# Render Blueprint — one-file description of the whole production stack.
+# In the Render dashboard: New → Blueprint → pick this repo. Render reads this
+# file and creates every service below. Re-syncing applies future changes.
+#
+# Stack: Postgres + Redis + Django API (Docker) + Celery worker (Docker) +
+# Next.js site (Docker). Only ./backend and ./web are ever built — repo-root
+# folders (teaching/, docs/, mobile/, *-audit/) are never part of any image.
+#
+# Plans below are sensible starting points; change them to fit your budget.
+# NOTE: values marked `sync: false` are NOT set by this file — you fill them in
+# the dashboard once (they depend on the final service URLs). See DEPLOYMENT.md.
+
+databases:
+  - name: flash-db
+    databaseName: flash
+    user: flash
+    plan: basic-256mb # paid, persistent. (The `free` plan is deleted after 30 days.)
+    postgresMajorVersion: "17"
+
+services:
+  # --- Redis (Celery broker + Django cache) -------------------------------
+  - type: redis
+    name: flash-redis
+    plan: free
+    maxmemoryPolicy: noeviction # never drop queued Celery tasks
+    ipAllowList: [] # internal-only (no public connections)
+
+  # --- Django REST API ----------------------------------------------------
+  - type: web
+    name: flash-backend
+    runtime: docker
+    plan: starter
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    healthCheckPath: /healthz
+    # Run migrations once, before each new version goes live.
+    preDeployCommand: python manage.py migrate --noinput
+    # Persistent storage for user-uploaded media (survives deploys/restarts).
+    # Single-instance only; switch to S3/R2 (USE_S3=True) to scale out.
+    disk:
+      name: flash-media
+      mountPath: /var/media
+      sizeGB: 1
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true # Render generates a strong key
+      - key: MEDIA_ROOT
+        value: /var/media
+      - key: ORGANIZATION_NAME
+        value: Flash News
+      - key: SEARCH_BACKEND
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flash-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flash-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: flash-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: flash-redis
+          property: connectionString
+      # Set these to your Next.js site's public URL after first deploy:
+      - key: SITE_URL
+        sync: false # e.g. https://flash-web.onrender.com (or your domain)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false # same site origin(s), comma-separated
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false # same site origin(s), comma-separated
+      # ALLOWED_HOSTS is auto-filled from RENDER_EXTERNAL_HOSTNAME (see settings).
+
+  # --- Celery worker (+ embedded beat scheduler) --------------------------
+  # Reuses the backend image; `-B` runs beat in-process (fine for one worker;
+  # split into a separate service before scaling the worker past 1 instance).
+  - type: worker
+    name: flash-worker
+    runtime: docker
+    plan: starter
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    dockerCommand: celery -A config worker --beat --loglevel info --concurrency 2
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true # worker signs nothing shared with web; a distinct key is safe
+      - key: SEARCH_BACKEND
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flash-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: flash-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: flash-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: flash-redis
+          property: connectionString
+
+  # --- Next.js public site ------------------------------------------------
+  # NEXT_PUBLIC_* are inlined at build time; Render passes them to the Docker
+  # build as build args. Set them BEFORE the first deploy (all `sync: false`).
+  - type: web
+    name: flash-web
+    runtime: docker
+    plan: starter
+    dockerfilePath: web/Dockerfile
+    dockerContext: web
+    healthCheckPath: /
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # https://flash-backend.onrender.com/api/v1
+      - key: NEXT_PUBLIC_BACKEND_ORIGIN
+        sync: false # https://flash-backend.onrender.com
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false # https://flash-web.onrender.com (or your domain)
+      - key: NEXT_PUBLIC_MEDIA_HOST
+        sync: false # optional: CDN/object-storage host if USE_S3=True
+      - key: NEXT_PUBLIC_ADSENSE_CLIENT
+        sync: false # optional: ca-pub-…
+      - key: NEXT_PUBLIC_ADSENSE_AUTO_ADS
+        sync: false # optional: true/false

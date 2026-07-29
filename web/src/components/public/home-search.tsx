@@ -40,7 +40,9 @@ export function HomeSearch({ categories }: { categories: Category[] }) {
       >
         <option value="">Select Category</option>
         {top.map((c) => (
-          <option key={c.id} value={c.id}>{c.name}</option>
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
         ))}
       </select>
       <select
@@ -49,10 +51,15 @@ export function HomeSearch({ categories }: { categories: Category[] }) {
       >
         <option value="">Select SubCategory</option>
         {subs.map((c) => (
-          <option key={c.id} value={c.id}>{c.name}</option>
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
         ))}
       </select>
-      <button type="submit" className="rounded bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark">
+      <button
+        type="submit"
+        className="rounded bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark"
+      >
         Search
       </button>
     </form>

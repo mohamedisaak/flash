@@ -12,6 +12,8 @@ import { env } from "@/lib/env";
 import { formatDate, mediaUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Sidebar } from "@/components/public/sidebar";
+import { JsonLd } from "@/components/json-ld";
+import { buildBreadcrumbJsonLd, buildCollectionJsonLd } from "@/lib/seo";
 
 export const revalidate = 120;
 
@@ -21,10 +23,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { category: slug } = await params;
   const category = await api.getCategory(slug);
   if (!category) return { title: "Section not found" };
+  const title = category.seo_title || category.name;
+  const description =
+    category.meta_description || category.description || `Latest ${category.name} news and stories.`;
   return {
-    title: category.seo_title || category.name,
-    description: category.meta_description || category.description,
+    title,
+    description,
     alternates: { canonical: `${env.siteUrl}/${category.slug}` },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `${env.siteUrl}/${category.slug}`,
+    },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -38,10 +50,25 @@ export default async function CategoryPage({ params }: PageProps) {
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
       <div>
+        <JsonLd
+          data={buildBreadcrumbJsonLd([
+            ["Home", "/"],
+            [category.name, `/${category.slug}`],
+          ])}
+        />
+        <JsonLd
+          data={buildCollectionJsonLd(
+            category.name,
+            `/${category.slug}`,
+            category.meta_description || category.description,
+          )}
+        />
         <header className="mb-5">
           <h1 className="text-3xl font-extrabold">{category.name}</h1>
           <nav className="mt-2 border-b border-[var(--border)] pb-3 text-sm text-[var(--muted)]">
-            <Link href="/" className="hover:text-brand">Home</Link>
+            <Link href="/" className="hover:text-brand">
+              Home
+            </Link>
             <span className="mx-2">/</span>
             <span>{category.name}</span>
           </nav>
@@ -56,10 +83,22 @@ export default async function CategoryPage({ params }: PageProps) {
               return (
                 <Link key={a.id} href={`/articles/${a.slug}`} className="group block">
                   <div className="relative aspect-[16/10] w-full overflow-hidden rounded bg-gray-100">
-                    {img && <Image src={img} alt={a.title} fill sizes="(max-width:768px) 100vw, 360px" className="object-cover transition group-hover:scale-105" />}
-                    <div className="absolute left-3 top-3"><Badge variant="accent">{a.category.name}</Badge></div>
+                    {img && (
+                      <Image
+                        src={img}
+                        alt={a.title}
+                        fill
+                        sizes="(max-width:768px) 100vw, 360px"
+                        className="object-cover transition group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute left-3 top-3">
+                      <Badge variant="accent">{a.category.name}</Badge>
+                    </div>
                   </div>
-                  <h3 className="mt-2 text-lg font-bold leading-snug group-hover:text-brand">{a.title}</h3>
+                  <h3 className="mt-2 text-lg font-bold leading-snug group-hover:text-brand">
+                    {a.title}
+                  </h3>
                   <p className="mt-1 text-xs text-[var(--muted)]">
                     {a.author.full_name || a.author.username} · {formatDate(a.published_at)}
                   </p>

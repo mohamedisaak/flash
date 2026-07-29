@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+// 404s are served with the correct status by Next; keep them out of the index.
+export const metadata: Metadata = {
+  title: "Page not found",
+  robots: { index: false, follow: true },
+};
 
 /** Rendered for unmatched routes and when a page calls `notFound()`. */
 export default function NotFound() {

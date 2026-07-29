@@ -9,12 +9,12 @@ pytestmark = pytest.mark.django_db
 
 
 def _make_article(category, author, **extra):
-    defaults = dict(
-        title="A story",
-        author=author,
-        category=category,
-        status="draft",
-    )
+    defaults = {
+        "title": "A story",
+        "author": author,
+        "category": category,
+        "status": "draft",
+    }
     defaults.update(extra)
     return Article.objects.create(**defaults)
 
@@ -52,7 +52,10 @@ def test_editor_can_create_article_and_is_author(api, editor, category):
 def test_public_list_shows_only_published(api, editor, category):
     _make_article(category, editor, title="Draft one", status="draft")
     _make_article(
-        category, editor, title="Live one", status="published",
+        category,
+        editor,
+        title="Live one",
+        status="published",
         published_at=timezone.now(),
     )
     resp = api.get("/api/v1/articles/")
@@ -71,9 +74,7 @@ def test_staff_list_shows_drafts(api, editor, category):
 
 
 def test_view_action_increments_counter(api, editor, category):
-    art = _make_article(
-        category, editor, status="published", published_at=timezone.now()
-    )
+    art = _make_article(category, editor, status="published", published_at=timezone.now())
     assert art.views == 0
     resp = api.post(f"/api/v1/articles/{art.slug}/view/")
     assert resp.status_code == 200

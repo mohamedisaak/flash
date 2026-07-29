@@ -7,14 +7,21 @@ import { singleton } from "@/lib/auth-api";
 import { useAuthStore } from "@/lib/auth-store";
 import type { User } from "@/lib/dashboard-types";
 
-const input = "w-full rounded-md border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-brand";
+const input =
+  "w-full rounded-md border border-[var(--border)] px-3 py-2 text-sm outline-none focus:border-brand";
 
 export default function EditProfilePage() {
   const { user, setUser } = useAuthStore();
   const [form, setForm] = useState({ first_name: "", last_name: "", email: "", bio: "" });
 
   useEffect(() => {
-    if (user) setForm({ first_name: user.first_name, last_name: user.last_name, email: user.email, bio: user.bio });
+    if (user)
+      setForm({
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        bio: user.bio,
+      });
   }, [user]);
 
   const save = useMutation({
@@ -40,24 +47,45 @@ export default function EditProfilePage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-sm font-medium">First name</span>
-              <input className={input} value={form.first_name} onChange={(e) => set("first_name", e.target.value)} />
+              <input
+                className={input}
+                value={form.first_name}
+                onChange={(e) => set("first_name", e.target.value)}
+              />
             </label>
             <label className="block">
               <span className="mb-1 block text-sm font-medium">Last name</span>
-              <input className={input} value={form.last_name} onChange={(e) => set("last_name", e.target.value)} />
+              <input
+                className={input}
+                value={form.last_name}
+                onChange={(e) => set("last_name", e.target.value)}
+              />
             </label>
           </div>
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Email</span>
-            <input className={input} value={form.email} onChange={(e) => set("email", e.target.value)} />
+            <input
+              className={input}
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Bio</span>
-            <textarea rows={3} className={input} value={form.bio} onChange={(e) => set("bio", e.target.value)} />
+            <textarea
+              rows={3}
+              className={input}
+              value={form.bio}
+              onChange={(e) => set("bio", e.target.value)}
+            />
           </label>
           {save.isSuccess && <p className="text-sm text-accent">Profile updated.</p>}
           {save.isError && <p className="text-sm text-rose-500">Update failed.</p>}
-          <button type="submit" disabled={save.isPending} className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={save.isPending}
+            className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
+          >
             {save.isPending ? "Saving…" : "Update"}
           </button>
         </form>

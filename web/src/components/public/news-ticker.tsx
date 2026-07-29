@@ -5,8 +5,8 @@
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-export async function NewsTicker() {
-  const { results } = await api.listArticles({ page_size: 10, ordering: "-published_at" });
+export async function NewsTicker({ limit = 10 }: { limit?: number }) {
+  const { results } = await api.listArticles({ page_size: limit, ordering: "-published_at" });
   if (results.length === 0) return null;
 
   // Duplicate the list so the marquee loops seamlessly.

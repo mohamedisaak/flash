@@ -5,7 +5,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { postAction, resource } from "@/lib/auth-api";
 import { formatDate } from "@/lib/utils";
 
-interface Subscriber { id: number; email: string; is_confirmed: boolean; is_active: boolean; created_at: string }
+interface Subscriber {
+  id: number;
+  email: string;
+  is_confirmed: boolean;
+  is_active: boolean;
+  created_at: string;
+}
 
 export default function SubscribersPage() {
   const { data: subs = [], isPending } = useQuery({
@@ -32,7 +38,8 @@ export default function SubscribersPage() {
 
       {send.isSuccess && (
         <p className="mb-4 rounded-md bg-accent/10 px-4 py-2 text-sm text-accent">
-          Email queued to {(send.data as { recipients?: number })?.recipients ?? 0} active subscribers.
+          Email queued to {(send.data as { recipients?: number })?.recipients ?? 0} active
+          subscribers.
         </p>
       )}
 
@@ -61,7 +68,9 @@ export default function SubscribersPage() {
             </tbody>
           </table>
         )}
-        {subs.length === 0 && !isPending && <p className="py-4 text-[var(--muted)]">No subscribers yet.</p>}
+        {subs.length === 0 && !isPending && (
+          <p className="py-4 text-[var(--muted)]">No subscribers yet.</p>
+        )}
       </div>
     </div>
   );

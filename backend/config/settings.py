@@ -39,6 +39,23 @@ DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
+# Fail fast rather than boot a production server with the shared insecure dev
+# key (a forgeable-session / signed-cookie risk). Render (see render.yaml) sets a
+# generated SECRET_KEY, so this only trips a genuine misconfiguration.
+if not DEBUG and SECRET_KEY.startswith("django-insecure"):
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        "SECRET_KEY is unset/insecure while DEBUG=False. Set a strong SECRET_KEY."
+    )
+
+# On Render every service is injected with RENDER_EXTERNAL_HOSTNAME; trust it
+# automatically so the API's own domain works without hand-editing ALLOWED_HOSTS.
+_render_host = env("RENDER_EXTERNAL_HOSTNAME", default="")
+if _render_host:
+    ALLOWED_HOSTS = [*ALLOWED_HOSTS, _render_host]
+    CSRF_TRUSTED_ORIGINS = [*CSRF_TRUSTED_ORIGINS, f"https://{_render_host}"]
+
 # Which browser origins (the web app, dashboards) may call the API cross-origin.
 CORS_ALLOWED_ORIGINS = env(
     "CORS_ALLOWED_ORIGINS",
@@ -85,6 +102,7 @@ LOCAL_APPS = [
     "apps.seo",
     "apps.search",
     "apps.cms",
+    "apps.aggregation",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -94,6 +112,10 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise serves collected static files (admin, DRF, Swagger) straight
+    # from the app process with far-future caching — no nginx/CDN required for
+    # them. Must sit directly after SecurityMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     # CORS must sit high, before CommonMiddleware, so it can add headers to (and
     # short-circuit) cross-origin preflight requests from the web/mobile clients.
     "corsheaders.middleware.CorsMiddleware",
@@ -140,6 +162,16 @@ DATABASES = {
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
     )
 }
+
+# Reuse database connections across requests instead of opening a fresh one each
+# time (persistent connections). On Postgres this removes the TCP + auth
+# handshake from every request's critical path and cuts connection churn/CPU on
+# the DB. CONN_HEALTH_CHECKS makes Django validate a reused connection before use
+# so a dropped connection is transparently replaced. Ignored by SQLite.
+# Set CONN_MAX_AGE=0 to restore per-request connections.
+if not DATABASES["default"]["ENGINE"].endswith("sqlite3"):
+    DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)
+    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # ---------------------------------------------------------------------------
 # Cache (Redis)
@@ -189,7 +221,18 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# MEDIA_ROOT is overridable so a host can point it at a persistent disk (e.g. a
+# Render Disk mounted at /var/media) instead of the ephemeral container fs.
+MEDIA_ROOT = env("MEDIA_ROOT", default=str(BASE_DIR / "media"))
+
+# In production, hash + compress static filenames so they can be cached forever
+# (WhiteNoise manifest storage). In DEBUG we keep the plain storage so the dev
+# server doesn't require a collectstatic run.
+_staticfiles_backend = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"
+    if DEBUG
+    else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
 
 # Django's STORAGES abstraction lets us swap where uploaded files live without
 # touching model code. Default: local disk. Set USE_S3=True (and `uv sync
@@ -209,12 +252,12 @@ if USE_S3:
                 "file_overwrite": False,
             },
         },
-        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        "staticfiles": {"BACKEND": _staticfiles_backend},
     }
 else:
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        "staticfiles": {"BACKEND": _staticfiles_backend},
     }
 
 # ---------------------------------------------------------------------------
@@ -254,6 +297,12 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": env("THROTTLE_ANON", default="60/min"),
         "user": env("THROTTLE_USER", default="1000/min"),
+        # Tight, per-scope limits for sensitive/abusable endpoints (brute-force,
+        # account/newsletter spam). Applied via ScopedRateThrottle on the views.
+        "login": env("THROTTLE_LOGIN", default="10/min"),
+        "register": env("THROTTLE_REGISTER", default="5/min"),
+        "subscribe": env("THROTTLE_SUBSCRIBE", default="10/min"),
+        "report": env("THROTTLE_REPORT", default="20/min"),
     },
     # drf-spectacular generates the OpenAPI schema from our views/serializers.
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -284,6 +333,8 @@ SPECTACULAR_SETTINGS = {
         "LiveBlogStatusEnum": "apps.livecoverage.models.LiveBlogStatus.choices",
         "UserStatusEnum": "apps.accounts.models.UserStatus.choices",
         "AdPlacementEnum": "apps.ads.models.AdPlacement.choices",
+        "AdEffectEnum": "apps.ads.models.AdEffect.choices",
+        "OverlayPositionEnum": "apps.ads.models.OverlayPosition.choices",
     },
 }
 
@@ -357,3 +408,28 @@ ORGANIZATION_LOGO_URL = env("ORGANIZATION_LOGO_URL", default="")
 # search (with a plain-lookup fallback on SQLite for local/dev). "opensearch"
 # selects the (deferred) OpenSearch backend behind the same interface.
 SEARCH_BACKEND = env("SEARCH_BACKEND", default="postgres")
+
+# ---------------------------------------------------------------------------
+# Security hardening  (OWASP; see docs/DEVELOPMENT.md and `manage.py check --deploy`)
+# ---------------------------------------------------------------------------
+# Always-on protections (safe in dev too):
+SECURE_CONTENT_TYPE_NOSNIFF = True  # block MIME-sniffing (X-Content-Type-Options)
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "DENY"  # clickjacking: never allow framing
+SESSION_COOKIE_HTTPONLY = True  # session cookie not readable by JS
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# Production-only (HTTPS assumed behind nginx/Let's Encrypt). Gated on DEBUG so
+# local HTTP dev isn't force-redirected to https. Override via env if needed.
+if not DEBUG:
+    # Trust the proxy's X-Forwarded-Proto so Django knows the edge served HTTPS.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
+    SESSION_COOKIE_SECURE = True  # cookies only sent over HTTPS
+    CSRF_COOKIE_SECURE = True
+    # HSTS: tell browsers to always use HTTPS for this domain. Start smaller and
+    # raise once you're confident; 1 year + preload is the hardened target.
+    SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=31536000)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

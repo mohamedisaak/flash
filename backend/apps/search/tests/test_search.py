@@ -13,8 +13,12 @@ pytestmark = pytest.mark.django_db
 def articles(editor, category):
     def make(title, status="published", **extra):
         return Article.objects.create(
-            title=title, author=editor, category=category,
-            status=status, published_at=timezone.now(), **extra,
+            title=title,
+            author=editor,
+            category=category,
+            status=status,
+            published_at=timezone.now(),
+            **extra,
         )
 
     return {

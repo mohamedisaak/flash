@@ -12,7 +12,13 @@ import { cn, formatDate, mediaUrl } from "@/lib/utils";
 import type { ArticleListItem } from "@/lib/types";
 import { Badge } from "./ui/badge";
 
-export function ArticleCard({ article, priority = false }: { article: ArticleListItem; priority?: boolean }) {
+export function ArticleCard({
+  article,
+  priority = false,
+}: {
+  article: ArticleListItem;
+  priority?: boolean;
+}) {
   const img = mediaUrl(article.featured_image, env.backendOrigin);
 
   return (
@@ -36,11 +42,18 @@ export function ArticleCard({ article, priority = false }: { article: ArticleLis
           )}
         </div>
         <div className="mt-2">
-          <span className="text-xs font-semibold text-brand uppercase">{article.category.name}</span>
-          <h3 className="mt-0.5 text-lg font-bold leading-snug group-hover:underline">{article.title}</h3>
-          {article.excerpt && <p className="mt-1 text-sm text-[var(--muted)] line-clamp-2">{article.excerpt}</p>}
+          <span className="text-xs font-semibold text-brand uppercase">
+            {article.category.name}
+          </span>
+          <h3 className="mt-0.5 text-lg font-bold leading-snug group-hover:underline">
+            {article.title}
+          </h3>
+          {article.excerpt && (
+            <p className="mt-1 text-sm text-[var(--muted)] line-clamp-2">{article.excerpt}</p>
+          )}
           <p className="mt-1 text-xs text-[var(--muted)]">
-            {article.author.full_name || article.author.username} · {formatDate(article.published_at)}
+            {article.author.full_name || article.author.username} ·{" "}
+            {formatDate(article.published_at)}
             {article.reading_time ? ` · ${article.reading_time} min read` : ""}
           </p>
         </div>

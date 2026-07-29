@@ -4,7 +4,11 @@ import { CrudSection } from "@/components/dashboard/crud/crud-section";
 import { useCategoryOptions } from "@/components/dashboard/use-category-options";
 
 interface CatRow {
-  id: number; name: string; slug: string; parent: number | null; order: number;
+  id: number;
+  name: string;
+  slug: string;
+  parent: number | null;
+  order: number;
 }
 
 export default function SubCategoriesPage() {
@@ -23,7 +27,13 @@ export default function SubCategoriesPage() {
       ]}
       fields={[
         { name: "name", label: "SubCategory Name", type: "text", required: true },
-        { name: "parent", label: "Parent Category", type: "select", options: parentOptions, required: true },
+        {
+          name: "parent",
+          label: "Parent Category",
+          type: "select",
+          options: parentOptions,
+          required: true,
+        },
         { name: "order", label: "Order", type: "number" },
       ]}
       toForm={(r) => ({ name: r.name, parent: r.parent ?? "", order: r.order })}

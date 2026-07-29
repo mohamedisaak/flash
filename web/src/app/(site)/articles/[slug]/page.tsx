@@ -30,17 +30,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = article.seo_title || article.title;
   const description = article.meta_description || article.excerpt;
   const image = mediaUrl(article.featured_image, env.backendOrigin) ?? undefined;
+  const authorName = article.author.full_name || article.author.username;
+  const keywords = article.meta_keywords
+    ? article.meta_keywords.split(",").map((k) => k.trim()).filter(Boolean)
+    : article.tags.map((t) => t.name);
   return {
     title,
     description,
+    authors: [{ name: authorName, url: `${env.siteUrl}/authors/${article.author.id}` }],
+    keywords: keywords.length ? keywords : undefined,
     alternates: { canonical: article.canonical_url || `${env.siteUrl}/articles/${article.slug}` },
     openGraph: {
-      title, description, type: "article",
+      title,
+      description,
+      type: "article",
+      url: `${env.siteUrl}/articles/${article.slug}`,
       publishedTime: article.published_at ?? undefined,
-      authors: [article.author.full_name || article.author.username],
+      modifiedTime: article.updated_at ?? undefined,
+      section: article.category.name,
+      tags: article.tags.map((t) => t.name),
+      authors: [authorName],
       images: image ? [image] : undefined,
     },
-    twitter: { card: "summary_large_image", title, description, images: image ? [image] : undefined },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
   };
 }
 
@@ -66,41 +83,71 @@ export default async function ArticlePage({ params }: PageProps) {
 
         {/* Breadcrumb */}
         <nav className="mt-3 border-b border-[var(--border)] pb-3 text-sm text-[var(--muted)]">
-          <Link href="/" className="hover:text-brand">Home</Link>
+          <Link href="/" className="hover:text-brand">
+            Home
+          </Link>
           <span className="mx-2">/</span>
-          <Link href={`/${article.category.slug}`} className="hover:text-brand">{article.category.name}</Link>
+          <Link href={`/${article.category.slug}`} className="hover:text-brand">
+            {article.category.name}
+          </Link>
           <span className="mx-2">/</span>
           <span>{article.title}</span>
         </nav>
 
         {img && (
           <div className="relative mt-4 aspect-[16/9] w-full overflow-hidden rounded bg-gray-100">
-            <Image src={img} alt={article.image_caption || article.title} fill priority sizes="(max-width:1024px) 100vw, 760px" className="object-cover" />
+            <Image
+              src={img}
+              alt={article.image_caption || article.title}
+              fill
+              priority
+              sizes="(max-width:1024px) 100vw, 760px"
+              className="object-cover"
+            />
           </div>
         )}
 
         {/* Meta */}
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-[var(--border)] pb-3 text-sm text-[var(--muted)]">
-          <Link href={`/authors/${article.author.id}`} className="flex items-center gap-1 hover:text-brand">
+          <Link
+            href={`/authors/${article.author.id}`}
+            className="flex items-center gap-1 hover:text-brand"
+          >
             <span aria-hidden>👤</span> {article.author.full_name || article.author.username}
           </Link>
-          <Link href={`/${article.category.slug}`} className="flex items-center gap-1 hover:text-brand">
+          <Link
+            href={`/${article.category.slug}`}
+            className="flex items-center gap-1 hover:text-brand"
+          >
             <span aria-hidden>🗂</span> {article.category.name}
           </Link>
-          <span className="flex items-center gap-1"><span aria-hidden>🕒</span> {formatDate(article.published_at)}</span>
-          <span className="flex items-center gap-1"><span aria-hidden>👁</span> {article.views}</span>
+          <span className="flex items-center gap-1">
+            <span aria-hidden>🕒</span> {formatDate(article.published_at)}
+          </span>
+          <span className="flex items-center gap-1">
+            <span aria-hidden>👁</span> {article.views}
+          </span>
         </div>
 
-        {article.subtitle && <p className="mt-4 text-lg font-medium text-[var(--muted)]">{article.subtitle}</p>}
+        {article.subtitle && (
+          <p className="mt-4 text-lg font-medium text-[var(--muted)]">{article.subtitle}</p>
+        )}
 
-        <div className="article-body mt-4 text-[1.05rem] leading-relaxed" dangerouslySetInnerHTML={{ __html: article.content }} />
+        <div
+          className="article-body mt-4 text-[1.05rem] leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: article.content }}
+        />
 
         {article.tags.length > 0 && (
           <div className="mt-8">
             <h3 className="mb-2 text-lg font-bold">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {article.tags.map((t) => (
-                <Link key={t.id} href={`/search?q=${encodeURIComponent(t.name)}`} className="rounded bg-gray-500/90 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand">
+                <Link
+                  key={t.id}
+                  href={`/search?q=${encodeURIComponent(t.name)}`}
+                  className="rounded bg-gray-500/90 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand"
+                >
                   {t.name}
                 </Link>
               ))}
@@ -122,10 +169,22 @@ export default async function ArticlePage({ params }: PageProps) {
                 return (
                   <Link key={a.id} href={`/articles/${a.slug}`} className="group block">
                     <div className="relative aspect-[16/9] w-full overflow-hidden rounded bg-gray-100">
-                      {rimg && <Image src={rimg} alt={a.title} fill sizes="360px" className="object-cover" />}
+                      {rimg && (
+                        <Image
+                          src={rimg}
+                          alt={a.title}
+                          fill
+                          sizes="360px"
+                          className="object-cover"
+                        />
+                      )}
                     </div>
-                    <Badge variant="accent" className="mt-2">{a.category.name}</Badge>
-                    <h4 className="mt-1 font-bold leading-snug group-hover:text-brand">{a.title}</h4>
+                    <Badge variant="accent" className="mt-2">
+                      {a.category.name}
+                    </Badge>
+                    <h4 className="mt-1 font-bold leading-snug group-hover:text-brand">
+                      {a.title}
+                    </h4>
                     <p className="mt-1 text-xs text-[var(--muted)]">
                       {a.author.full_name || a.author.username} · {formatDate(a.published_at)}
                     </p>

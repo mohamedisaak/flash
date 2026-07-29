@@ -8,16 +8,7 @@ import { api } from "@/lib/api";
 import { env } from "@/lib/env";
 import { formatDate, mediaUrl } from "@/lib/utils";
 import type { ArticleListItem } from "@/lib/types";
-
-function AdSlot({ label = "Advertisement", tall = false }: { label?: string; tall?: boolean }) {
-  return (
-    <div
-      className={`flex ${tall ? "h-72" : "h-40"} items-center justify-center rounded bg-gray-200 text-lg font-semibold text-gray-400`}
-    >
-      {label}
-    </div>
-  );
-}
+import { Ad } from "./ad";
 
 function MiniArticle({ a }: { a: ArticleListItem }) {
   const img = mediaUrl(a.featured_image, env.backendOrigin);
@@ -28,7 +19,9 @@ function MiniArticle({ a }: { a: ArticleListItem }) {
       </div>
       <div className="min-w-0">
         <span className="text-[11px] font-semibold uppercase text-accent">{a.category.name}</span>
-        <h4 className="line-clamp-2 text-sm font-bold leading-snug group-hover:text-brand">{a.title}</h4>
+        <h4 className="line-clamp-2 text-sm font-bold leading-snug group-hover:text-brand">
+          {a.title}
+        </h4>
         <p className="mt-0.5 text-xs text-[var(--muted)]">{formatDate(a.published_at)}</p>
       </div>
     </Link>
@@ -40,7 +33,11 @@ export async function Sidebar() {
 
   return (
     <aside className="space-y-8">
-      <AdSlot tall />
+      <Ad
+        placement="sidebar"
+        placeholderClassName="h-72 text-lg"
+        imageClassName="w-full max-h-[28rem]"
+      />
 
       {tags.length > 0 && (
         <div>
