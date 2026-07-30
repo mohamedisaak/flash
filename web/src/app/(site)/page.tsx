@@ -21,7 +21,12 @@ import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/lib/seo";
 import type { Metadata } from "next";
 import type { ArticleListItem } from "@/lib/types";
 
-export const revalidate = 60;
+// Render the homepage on-demand per request (like the category/article pages)
+// rather than serving a cached static snapshot. A news homepage must always
+// reflect the latest published articles the moment they go live; the underlying
+// API calls stay lightly cached, so this stays fast. (Was `revalidate = 60`,
+// which pinned the page to a build-time snapshot that lagged behind new posts.)
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await api.getSiteSettings();
