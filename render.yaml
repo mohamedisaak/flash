@@ -16,6 +16,7 @@ databases:
     user: flash
     plan: basic-256mb # paid, persistent. (The `free` plan is deleted after 30 days.)
     postgresMajorVersion: "17"
+    region: frankfurt
 
 services:
   # --- Redis (Celery broker + Django cache) -------------------------------
@@ -24,12 +25,14 @@ services:
     plan: free
     maxmemoryPolicy: noeviction # never drop queued Celery tasks
     ipAllowList: [] # internal-only (no public connections)
+    region: frankfurt
 
   # --- Django REST API ----------------------------------------------------
   - type: web
     name: flash-backend
     runtime: docker
     plan: starter
+    region: frankfurt
     dockerfilePath: backend/Dockerfile
     dockerContext: backend
     healthCheckPath: /healthz
@@ -87,6 +90,7 @@ services:
     name: flash-worker
     runtime: docker
     plan: starter
+    region: frankfurt
     dockerfilePath: backend/Dockerfile
     dockerContext: backend
     dockerCommand: celery -A config worker --beat --loglevel info --concurrency 2
@@ -124,6 +128,7 @@ services:
     name: flash-web
     runtime: docker
     plan: starter
+    region: frankfurt
     dockerfilePath: web/Dockerfile
     dockerContext: web
     healthCheckPath: /
