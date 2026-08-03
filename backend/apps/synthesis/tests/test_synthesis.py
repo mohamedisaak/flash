@@ -165,6 +165,31 @@ def test_output_wrapped_in_code_fences_is_parsed(monkeypatch, staff, items):
 
 
 @pytest.mark.django_db
+def test_body_with_raw_newlines_is_parsed(monkeypatch, staff, items):
+    """A long body_html with literal newlines must not fail JSON parsing."""
+
+    class _MultiLine:
+        name, model = "groq", "llama-3.1-8b-instant"
+
+        def generate(self, *, system, prompt):
+            # Raw control characters (newlines) inside the JSON string — invalid
+            # under strict JSON, but the model does this with long HTML bodies.
+            payload = (
+                '{"title": "T", "excerpt": "E",\n'
+                '"body_html": "<p>Line one.</p>\n<p>Line two.</p>",\n'
+                '"meta_description": "M"}'
+            )
+            return LLMResult(text=payload, model=self.model, provider=self.name)
+
+    monkeypatch.setattr(services, "get_provider", lambda: _MultiLine())
+    monkeypatch.setattr(services, "_download_image", lambda a, u: None)
+
+    job = services.synthesize([items[0].id], staff)
+    assert job.status == SynthesisStatus.SUCCESS
+    assert "Line one." in job.article.content and "Line two." in job.article.content
+
+
+@pytest.mark.django_db
 def test_model_error_records_error_job(monkeypatch, staff, items):
     class _Boom:
         name, model = "ollama", "llama3.1:8b"
@@ -266,3 +291,63 @@ def test_requires_staff(db, items):
         c.post("/api/v1/synthesis/jobs/run/", {"ids": [items[0].id]}, format="json").status_code
         == 403
     )
+
+
+# --------------------------------------------------------------------------- #
+# Provider HTTP layer — rate-limit (429) handling
+# --------------------------------------------------------------------------- #
+def _http_429(url: str):
+    """Build a 429 HTTPError with a Retry-After header, like Groq sends."""
+    import email.message
+    import io
+    import urllib.error
+
+    hdrs = email.message.Message()
+    hdrs["Retry-After"] = "0"
+    return urllib.error.HTTPError(url, 429, "Too Many Requests", hdrs, io.BytesIO(b'{"error":"rate"}'))
+
+
+class _FakeResp:
+    def __init__(self, data: bytes):
+        self._data = data
+
+    def read(self):
+        return self._data
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def test_post_json_retries_once_on_429(monkeypatch):
+    from apps.synthesis import providers
+
+    calls = {"n": 0}
+
+    def fake_urlopen(req, timeout):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise _http_429(req.full_url)
+        return _FakeResp(json.dumps({"ok": True}).encode())
+
+    monkeypatch.setattr(providers.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(providers.time, "sleep", lambda _s: None)  # don't actually wait
+
+    out = providers._post_json("https://api.groq.com/x", {"a": 1}, timeout=5)
+    assert out == {"ok": True}
+    assert calls["n"] == 2  # failed once, retried, succeeded
+
+
+def test_post_json_raises_friendly_after_429_exhausted(monkeypatch):
+    from apps.synthesis import providers
+
+    def fake_urlopen(req, timeout):
+        raise _http_429(req.full_url)
+
+    monkeypatch.setattr(providers.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(providers.time, "sleep", lambda _s: None)
+
+    with pytest.raises(providers.LLMError, match="Rate limit"):
+        providers._post_json("https://api.groq.com/x", {}, timeout=5)

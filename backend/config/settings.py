@@ -420,10 +420,10 @@ GROQ_MODEL = env("GROQ_MODEL", default="llama-3.1-8b-instant")
 # Per-request budget for a generation call (seconds). Local models on CPU are
 # slow, so this is generous.
 AI_SYNTHESIS_TIMEOUT = env.int("AI_SYNTHESIS_TIMEOUT", default=120)
-# Max tokens the model may generate for one article. ~3000 tokens ≈ 2000+ words,
-# enough for a full-length piece; raise for very long features. Prevents the
-# provider's conservative default from cutting the article short.
-AI_MAX_TOKENS = env.int("AI_MAX_TOKENS", default=3000)
+# Max tokens the model may generate for one article. ~2500 tokens ≈ 1800 words —
+# a full-length piece that still fits Groq's free-tier budget of 6000 tokens/min
+# (prompt + output). Raise it if you self-host (Ollama) or upgrade your Groq tier.
+AI_MAX_TOKENS = env.int("AI_MAX_TOKENS", default=2500)
 
 # ---------------------------------------------------------------------------
 # Search

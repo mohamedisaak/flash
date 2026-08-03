@@ -73,13 +73,23 @@ def build_user_prompt(sources: list[dict], *, angle: str = "") -> str:
     per aggregated item chosen by the editor. We label each with an index the
     model can refer to, cap each body so a few long articles can't blow the
     context window, and (optionally) steer the framing with ``angle``.
+
+    The per-source cap shrinks as more sources are selected, keeping the *total*
+    input roughly bounded (~11k chars ≈ 2.7k tokens). That matters on hosted
+    free tiers (Groq: 6000 tokens/minute) where prompt + output must fit the
+    per-minute budget, and it keeps the model focused on the salient facts.
     """
+    n = len(sources)
+    # Total input budget ~11k chars, divided across sources, but never below 1.8k
+    # each (a single source still gets up to 6k).
+    per_source_cap = min(6000, max(1800, 11000 // max(1, n)))
+
     blocks: list[str] = []
     longest = 0
     for i, src in enumerate(sources, start=1):
         body = (src.get("body") or src.get("summary") or "").strip()
-        if len(body) > 6000:  # keep the prompt within a sane context budget
-            body = body[:6000] + " …[truncated]"
+        if len(body) > per_source_cap:
+            body = body[:per_source_cap] + " …[truncated]"
         longest = max(longest, len(body.split()))
         blocks.append(
             f"### SOURCE {i}: {src.get('name', 'Unknown outlet')}\n"
@@ -100,7 +110,6 @@ def build_user_prompt(sources: list[dict], *, angle: str = "") -> str:
 
     steer = f"\nEditor's angle for this piece: {angle.strip()}\n" if angle.strip() else ""
     schema = json.dumps(_OUTPUT_SCHEMA, indent=2)
-    n = len(sources)
     plural = "these reports" if n > 1 else "this report"
 
     return (

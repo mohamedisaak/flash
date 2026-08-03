@@ -122,19 +122,24 @@ def _parse_output(text: str) -> dict:
     Instruction-tuned models mostly return clean JSON, but some wrap it in
     ```json fences or add a stray sentence. We strip fences, then fall back to
     the outermost ``{...}`` slice before giving up.
+
+    ``strict=False`` lets ``json.loads`` accept literal control characters (raw
+    newlines/tabs) inside string values — common now that ``body_html`` is a
+    long, multi-line block — instead of rejecting them with "Invalid control
+    character".
     """
     cleaned = text.strip()
     if cleaned.startswith("```"):
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
         cleaned = re.sub(r"\s*```$", "", cleaned).strip()
     try:
-        data = json.loads(cleaned)
+        data = json.loads(cleaned, strict=False)
     except json.JSONDecodeError:
         start, end = cleaned.find("{"), cleaned.rfind("}")
         if start == -1 or end <= start:
             raise SynthesisError("The model did not return parseable JSON.") from None
         try:
-            data = json.loads(cleaned[start : end + 1])
+            data = json.loads(cleaned[start : end + 1], strict=False)
         except json.JSONDecodeError as exc:
             raise SynthesisError(f"The model returned malformed JSON: {exc}") from exc
 

@@ -28,6 +28,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -36,6 +38,10 @@ from typing import Protocol
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+# Longest we'll sleep-and-retry when a hosted API rate-limits us (seconds). Keeps
+# the synchronous request well within AI_SYNTHESIS_TIMEOUT.
+_MAX_RETRY_WAIT = 25
 
 
 class LLMError(RuntimeError):
@@ -74,12 +80,34 @@ class LLMProvider(Protocol):
     def generate(self, *, system: str, prompt: str) -> LLMResult: ...
 
 
-def _post_json(url: str, payload: dict, timeout: int, headers: dict | None = None) -> dict:
+def _retry_after_seconds(exc: urllib.error.HTTPError, body: str) -> float:
+    """How long to wait before retrying a 429, from the header or the body text.
+
+    Prefers the standard ``Retry-After`` header; falls back to parsing Groq's
+    "Please try again in 20.25s" message. Capped so we never block too long.
+    """
+    header = exc.headers.get("Retry-After") if exc.headers else None
+    if header:
+        try:
+            return min(float(header), _MAX_RETRY_WAIT)
+        except ValueError:
+            pass
+    match = re.search(r"try again in ([\d.]+)s", body)
+    if match:
+        return min(float(match.group(1)) + 0.5, _MAX_RETRY_WAIT)
+    return 5.0
+
+
+def _post_json(
+    url: str, payload: dict, timeout: int, headers: dict | None = None, retries: int = 1
+) -> dict:
     """POST ``payload`` as JSON and parse the JSON response.
 
     Wraps the stdlib so both providers share identical error handling: any
     network/parse problem becomes an :class:`LLMError` with a human-readable
-    cause instead of a raw traceback.
+    cause instead of a raw traceback. On a ``429`` (rate limit) it waits the
+    server-requested interval and retries once — enough to ride out a hosted
+    free tier's per-minute token budget.
     """
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
@@ -92,20 +120,37 @@ def _post_json(url: str, payload: dict, timeout: int, headers: dict | None = Non
         },
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — trusted, configured URL
-            raw = resp.read().decode("utf-8")
-        return json.loads(raw)
-    except urllib.error.HTTPError as exc:  # 4xx/5xx from the model server
-        body = exc.read().decode("utf-8", "replace")[:300] if exc.fp else ""
-        raise LLMError(f"Model server returned HTTP {exc.code}: {body or exc.reason}") from exc
-    except urllib.error.URLError as exc:  # connection refused, DNS, timeout
-        raise LLMError(
-            f"Could not reach the model server at {url} ({exc.reason}). "
-            "Is Ollama running and the model pulled?"
-        ) from exc
-    except (ValueError, json.JSONDecodeError) as exc:
-        raise LLMError(f"Model server sent an unreadable response: {exc}") from exc
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — trusted, configured URL
+                raw = resp.read().decode("utf-8")
+            return json.loads(raw)
+        except urllib.error.HTTPError as exc:  # 4xx/5xx from the model server
+            body = exc.read().decode("utf-8", "replace")[:500] if exc.fp else ""
+            if exc.code == 429:
+                if attempt < retries:
+                    wait = _retry_after_seconds(exc, body)
+                    logger.info("Rate limited by model server; retrying in %.1fs", wait)
+                    time.sleep(wait)
+                    continue
+                raise LLMError(
+                    "Rate limit reached on the hosted model (free tier ~6000 "
+                    "tokens/minute). Wait a few seconds and try again, synthesise "
+                    "fewer articles at once, or lower AI_MAX_TOKENS. Upgrading your "
+                    "Groq tier removes this limit."
+                ) from exc
+            raise LLMError(
+                f"Model server returned HTTP {exc.code}: {body or exc.reason}"
+            ) from exc
+        except urllib.error.URLError as exc:  # connection refused, DNS, timeout
+            raise LLMError(
+                f"Could not reach the model server at {url} ({exc.reason}). "
+                "Is Ollama running and the model pulled?"
+            ) from exc
+        except (ValueError, json.JSONDecodeError) as exc:
+            raise LLMError(f"Model server sent an unreadable response: {exc}") from exc
+    # Unreachable (loop either returns or raises), but keeps type-checkers happy.
+    raise LLMError("Model server request failed.")
 
 
 class OllamaProvider:
