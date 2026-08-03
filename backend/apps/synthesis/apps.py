@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class SynthesisConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.synthesis"
+    verbose_name = "AI Synthesis"

@@ -20,7 +20,23 @@ import {
   type IngestSource,
   type RunSummary,
 } from "@/lib/ingestion-api";
+import { synthesisApi, type SynthesisJob } from "@/lib/synthesis-api";
 import { formatDate } from "@/lib/utils";
+
+/** Pull the human-readable `detail` out of an `apiRequest` error string. */
+function errorDetail(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  const brace = msg.indexOf("{");
+  if (brace !== -1) {
+    try {
+      const parsed = JSON.parse(msg.slice(brace)) as { detail?: string };
+      if (parsed.detail) return parsed.detail;
+    } catch {
+      /* fall through to the raw message */
+    }
+  }
+  return msg;
+}
 
 const REGION_LABELS: Record<string, string> = {
   kenya: "🇰🇪 Kenyan press",
@@ -84,6 +100,11 @@ export default function NewsIngestionPage() {
   const { data: categoriesPage } = useQuery({
     queryKey: ["agg-categories"],
     queryFn: ingestionApi.categories,
+  });
+  // Is the local AI model reachable? Drives the synthesis banner + button state.
+  const { data: aiStatus } = useQuery({
+    queryKey: ["synth-status"],
+    queryFn: synthesisApi.status,
   });
 
   // Section an imported item is filed under. The admin picks it here instead of
@@ -182,6 +203,26 @@ export default function NewsIngestionPage() {
       invalidate();
     },
   });
+
+  // ---- AI synthesis (combine the selected sources into ONE original draft) ----
+  const [angle, setAngle] = useState("");
+  const [synthResult, setSynthResult] = useState<SynthesisJob | null>(null);
+  const [synthError, setSynthError] = useState<string | null>(null);
+  const synth = useMutation({
+    mutationFn: () =>
+      synthesisApi.run({ ids: [...selected], angle: angle.trim(), category: importCategory }),
+    onSuccess: (job) => {
+      setSynthError(null);
+      setSynthResult(job);
+      setAngle("");
+      setSelected(new Set());
+      invalidate();
+    },
+    onError: (e) => {
+      setSynthResult(null);
+      setSynthError(errorDetail(e));
+    },
+  });
   const rowAction = useMutation({
     mutationFn: (v: { id: number; kind: "publish" | "draft" | "hide" | "unhide" | "fetch" }) => {
       if (v.kind === "publish") return ingestionApi.itemImport(v.id, true, importCategory);
@@ -234,6 +275,18 @@ export default function NewsIngestionPage() {
             <strong>{stats.hidden}</strong> hidden
           </p>
         )}
+        {aiStatus &&
+          (aiStatus.enabled ? (
+            <p className="mt-2 text-xs text-emerald-700">
+              ✨ AI synthesis ready — <strong>{aiStatus.provider}</strong> · {aiStatus.model}. Select
+              one or more sources below and “Synthesise” to draft an original, cited article.
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-amber-700">
+              AI synthesis is off — {aiStatus.reason} See <code>.env</code> (<code>AI_PROVIDER</code>
+              ).
+            </p>
+          ))}
       </div>
 
       {/* ---------- Run ingestion ---------- */}
@@ -428,6 +481,26 @@ export default function NewsIngestionPage() {
                 {categoryOptions.find((c) => c.slug === importCategory)?.name ?? importCategory}
               </strong>
             </span>
+            <span className="mx-1 hidden h-5 w-px bg-gray-300 sm:block" />
+            <input
+              value={angle}
+              onChange={(e) => setAngle(e.target.value)}
+              placeholder="Optional angle for the AI piece…"
+              className="w-52 rounded-md border border-[var(--border)] px-2 py-1 text-xs"
+              title="Steer the framing, e.g. 'focus on the economic impact'"
+            />
+            <button
+              onClick={() => synth.mutate()}
+              disabled={synth.isPending || !aiStatus?.enabled}
+              className={btnBrand}
+              title={
+                aiStatus?.enabled
+                  ? "Write ONE original, cited draft that synthesises all selected sources"
+                  : (aiStatus?.reason ?? "AI synthesis is not configured")
+              }
+            >
+              {synth.isPending ? "Synthesising… (up to a minute)" : "✨ Synthesise article (AI)"}
+            </button>
             <button
               onClick={() => bulk.mutate("fetch_content")}
               disabled={bulk.isPending}
@@ -785,6 +858,68 @@ export default function NewsIngestionPage() {
                   </button>
                 )}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ---------- Synthesis result / error modal ---------- */}
+      {(synthResult || synthError) && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8"
+          onClick={() => {
+            setSynthResult(null);
+            setSynthError(null);
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {synthError ? (
+              <>
+                <h3 className="mb-2 text-lg font-bold text-rose-600">Synthesis failed</h3>
+                <p className="rounded bg-rose-50 p-3 text-sm text-rose-800">{synthError}</p>
+                <p className="mt-3 text-xs text-[var(--muted)]">
+                  Using Ollama? Make sure it is running on the server and the model has been pulled
+                  (<code>ollama pull llama3.1:8b</code>). On a small VPS, switch to
+                  <code> AI_PROVIDER=groq</code> with a free key instead.
+                </p>
+                <div className="mt-4 flex justify-end">
+                  <button onClick={() => setSynthError(null)} className={btn}>
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : (
+              synthResult && (
+                <>
+                  <h3 className="mb-2 text-lg font-bold text-emerald-700">✨ Draft created</h3>
+                  <p className="text-sm font-semibold">{synthResult.article_title}</p>
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    {synthResult.provider} · {synthResult.model} ·{" "}
+                    {(synthResult.duration_ms / 1000).toFixed(1)}s ·{" "}
+                    {synthResult.completion_tokens} tokens · {synthResult.source_ids.length}{" "}
+                    source(s)
+                  </p>
+                  <p className="mt-3 text-sm">
+                    An <strong>original, cited draft</strong> was created from your selected sources
+                    and saved to <strong>Articles</strong> as a draft. Review and edit it, then
+                    publish — nothing goes live automatically.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <a href="/dashboard/articles" className={btnBrand}>
+                      Go to Articles
+                    </a>
+                    <button
+                      onClick={() => setSynthResult(null)}
+                      className={btn}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              )
             )}
           </div>
         </div>

@@ -103,6 +103,7 @@ LOCAL_APPS = [
     "apps.search",
     "apps.cms",
     "apps.aggregation",
+    "apps.synthesis",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -400,6 +401,25 @@ CELERY_BEAT_SCHEDULE = {
 SITE_URL = env("SITE_URL", default="http://localhost:8000")
 ORGANIZATION_NAME = env("ORGANIZATION_NAME", default="Flash News")
 ORGANIZATION_LOGO_URL = env("ORGANIZATION_LOGO_URL", default="")
+
+# ---------------------------------------------------------------------------
+# AI synthesis  — see teaching/41-ai-synthesis/
+# ---------------------------------------------------------------------------
+# Which LLM backend powers the "Synthesise article" feature in News Ingestion.
+#   ollama   — a self-hosted model on this VPS (default; free, private)
+#   groq     — Groq's OpenAI-compatible hosted API (free tier; needs GROQ_API_KEY)
+#   disabled — turn the feature off
+AI_PROVIDER = env("AI_PROVIDER", default="ollama")
+# Local Ollama server + model (only used when AI_PROVIDER=ollama). The model must
+# be pulled once on the server: `ollama pull llama3.1:8b`.
+OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://localhost:11434")
+OLLAMA_MODEL = env("OLLAMA_MODEL", default="llama3.1:8b")
+# Hosted fallback (only used when AI_PROVIDER=groq).
+GROQ_API_KEY = env("GROQ_API_KEY", default="")
+GROQ_MODEL = env("GROQ_MODEL", default="llama-3.1-8b-instant")
+# Per-request budget for a generation call (seconds). Local models on CPU are
+# slow, so this is generous.
+AI_SYNTHESIS_TIMEOUT = env.int("AI_SYNTHESIS_TIMEOUT", default=120)
 
 # ---------------------------------------------------------------------------
 # Search

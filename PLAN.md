@@ -236,6 +236,7 @@ is added phase by phase.
       overview stats). Builds clean (typecheck + next build).
 - [x] Phase 5c — full CMS admin (see section below)
 - [x] News aggregation — `apps/aggregation` + `/dashboard/news-ingestion`
+- [x] AI synthesis — `apps/synthesis` (local Ollama, multi-source → cited draft)
       (added on request; see section below)
 - [x] Phase 6 — Mobile app (Expo) — MVP (see section below)
 - [ ] Phase 7 — Notifications & analytics  ← next
@@ -386,6 +387,40 @@ source/status filters, select-all, per-row + bulk publish-to-site / import-draft
 under News▸News Ingestion. Typecheck + build clean.
 
 Teaching: `teaching/40-news-aggregation/` (concept lesson + 4 file explainers).
+
+### AI content synthesis (added on request)
+
+Backend `apps/synthesis`: turns one or more `AggregatedArticle` items into a
+single **original, cited draft** `Article` using a **locally-hosted LLM on the
+VPS** (Ollama by default). Deliberately the *opposite* of "reword & strip
+attribution" (which gets sites deindexed): the prompt (`prompts.py`) forces
+original prose grounded in the supplied facts with in-text attribution and a
+strict JSON output; `services.py` sanitises the model HTML with `nh3`, appends a
+transparent **Sources** block of outbound credit links, and saves a **DRAFT**
+(never auto-published) that is **self-canonical** (blank `canonical_url`, so no
+duplicate-content signal). A swappable provider layer (`providers.py`,
+`LLMProvider` protocol) supports Ollama / Groq free API / disabled via
+`AI_PROVIDER`, spoken over stdlib HTTP (no new deps). Every run writes a
+`SynthesisJob` audit row (M2M to sources, provider/model, tokens, timing, error,
+draft link); the job survives failures because only draft-creation is atomic, not
+the whole call. Reuses aggregation's content-fetch/slug/category/image helpers.
+Staff-only DRF API under `/synthesis/` (`status/`, `jobs/run/`, `jobs/`). Runs
+synchronously (like ingestion `run`) so a single VPS works without a Celery
+worker; an optional `synthesize_task` offloads it. 12 new tests (fake provider,
+offline) — all pass.
+
+Frontend: `synthesis-api.ts` client + additions to `/dashboard/news-ingestion` —
+an AI-readiness banner (provider/model or "how to enable"), a **✨ Synthesise
+article (AI)** action in the multi-select bar with an optional "angle" input
+(combines all selected sources into one draft), and a result/error modal linking
+to the created draft. Typecheck + lint clean.
+
+Config: `AI_PROVIDER`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `GROQ_API_KEY`,
+`GROQ_MODEL`, `AI_SYNTHESIS_TIMEOUT` (in `settings.py` + `.env.example`).
+
+Teaching: `teaching/41-ai-synthesis/` — 3 concept lessons (why synthesis not
+paraphrase; LLM providers & Ollama; prompt design for citation) + 5 file
+explainers, with diagrams, exercises, quiz, debugging + interview questions.
 
 ### Phase 5b — what shipped (dashboards)
 
