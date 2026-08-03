@@ -2,7 +2,7 @@
 
 /** Posts management table (NewsPortal admin style). Authors see own; editors all. */
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/auth-api";
 import { useAuthStore } from "@/lib/auth-store";
 import { canPublish } from "@/lib/dashboard-types";
@@ -12,11 +12,18 @@ import { Badge } from "@/components/ui/badge";
 export default function ArticlesListPage() {
   const user = useAuthStore((s) => s.user);
   const scope: Record<string, number> = user && !canPublish(user.role) ? { author: user.id } : {};
+  const qc = useQueryClient();
 
   const { data, isPending } = useQuery({
     queryKey: ["dash-articles-list", scope],
     queryFn: () => authApi.listArticles({ ...scope, page_size: 100, ordering: "-created_at" }),
     enabled: !!user,
+  });
+
+  const del = useMutation({
+    mutationFn: (slug: string) => authApi.deleteArticle(slug),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dash-articles-list"] }),
+    onError: (e) => alert(e instanceof Error ? e.message : "Could not delete the post."),
   });
 
   return (
@@ -62,12 +69,29 @@ export default function ArticlesListPage() {
                       {formatDate(a.published_at) || "—"}
                     </td>
                     <td className="py-3">
-                      <Link
-                        href={`/dashboard/articles/${a.slug}/edit`}
-                        className="rounded bg-brand px-3 py-1 text-xs font-semibold text-white hover:bg-brand-dark"
-                      >
-                        Edit
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/dashboard/articles/${a.slug}/edit`}
+                          className="rounded bg-brand px-3 py-1 text-xs font-semibold text-white hover:bg-brand-dark"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => {
+                            if (
+                              confirm(
+                                `Delete “${a.title}”? This permanently removes the post and cannot be undone.`,
+                              )
+                            ) {
+                              del.mutate(a.slug);
+                            }
+                          }}
+                          disabled={del.isPending && del.variables === a.slug}
+                          className="rounded border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                        >
+                          {del.isPending && del.variables === a.slug ? "Deleting…" : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

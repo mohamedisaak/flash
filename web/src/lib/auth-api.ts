@@ -100,6 +100,14 @@ export const authApi = {
     );
   },
 
+  async deleteArticle(slug: string): Promise<void> {
+    const res = await authFetch(`/articles/${slug}/`, { method: "DELETE" });
+    // DELETE returns 204 No Content on success.
+    if (!res.ok && res.status !== 204) {
+      throw new Error(`Delete failed (${res.status})`);
+    }
+  },
+
   async listCategories(): Promise<Category[]> {
     const page = await json<Paginated<Category>>(
       await authFetch("/categories/", { method: "GET" }),
