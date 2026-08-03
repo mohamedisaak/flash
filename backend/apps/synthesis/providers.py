@@ -173,6 +173,10 @@ class OllamaProvider:
         payload = {
             "model": self.model,
             "stream": False,
+            # Constrain output to valid JSON at the decoder level, so quotes and
+            # newlines inside the article are always escaped correctly. Without
+            # this, long HTML bodies produce unescaped `"` that break parsing.
+            "format": "json",
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
@@ -216,6 +220,11 @@ class GroqProvider:
             "model": self.model,
             "temperature": 0.4,
             "max_tokens": self.max_tokens,
+            # JSON mode: the model must emit syntactically valid JSON, so quotes
+            # and newlines inside the article body are always escaped. Removes
+            # the whole class of "malformed JSON" parse failures. (Requires the
+            # prompt to mention JSON, which ours does throughout.)
+            "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
