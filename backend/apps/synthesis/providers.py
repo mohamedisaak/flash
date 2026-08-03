@@ -118,10 +118,11 @@ class OllamaProvider:
 
     name = "ollama"
 
-    def __init__(self, base_url: str, model: str, timeout: int):
+    def __init__(self, base_url: str, model: str, timeout: int, max_tokens: int):
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
+        self.max_tokens = max_tokens
 
     def generate(self, *, system: str, prompt: str) -> LLMResult:
         payload = {
@@ -136,6 +137,8 @@ class OllamaProvider:
                 # creative invention that could hallucinate facts.
                 "temperature": 0.4,
                 "num_ctx": 8192,
+                # Cap the generated length so full-length articles aren't cut off.
+                "num_predict": self.max_tokens,
             },
         }
         body = _post_json(f"{self.base_url}/api/chat", payload, self.timeout)
@@ -157,15 +160,17 @@ class GroqProvider:
     name = "groq"
     _URL = "https://api.groq.com/openai/v1/chat/completions"
 
-    def __init__(self, api_key: str, model: str, timeout: int):
+    def __init__(self, api_key: str, model: str, timeout: int, max_tokens: int):
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
+        self.max_tokens = max_tokens
 
     def generate(self, *, system: str, prompt: str) -> LLMResult:
         payload = {
             "model": self.model,
             "temperature": 0.4,
+            "max_tokens": self.max_tokens,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
@@ -214,12 +219,14 @@ def get_provider() -> LLMProvider:
     """
     choice = (getattr(settings, "AI_PROVIDER", "ollama") or "").lower()
     timeout = int(getattr(settings, "AI_SYNTHESIS_TIMEOUT", 120))
+    max_tokens = int(getattr(settings, "AI_MAX_TOKENS", 3000))
 
     if choice == "ollama":
         return OllamaProvider(
             base_url=getattr(settings, "OLLAMA_BASE_URL", "http://localhost:11434"),
             model=getattr(settings, "OLLAMA_MODEL", "llama3.1:8b"),
             timeout=timeout,
+            max_tokens=max_tokens,
         )
     if choice == "groq":
         key = getattr(settings, "GROQ_API_KEY", "")
@@ -229,6 +236,7 @@ def get_provider() -> LLMProvider:
             api_key=key,
             model=getattr(settings, "GROQ_MODEL", "llama-3.1-8b-instant"),
             timeout=timeout,
+            max_tokens=max_tokens,
         )
     return DisabledProvider(
         f"AI synthesis is disabled (AI_PROVIDER={choice!r}). "

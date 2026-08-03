@@ -41,7 +41,12 @@ SYSTEM_PROMPT = (
     "Reuters'). Do not pretend the reporting is your own eyewitness account.\n"
     "4. Neutral, factual tone. No editorialising, no clickbait, no invented "
     "urgency.\n"
-    "5. Return ONLY a single JSON object in the exact schema requested — no "
+    "5. Be COMPREHENSIVE, not a summary. Cover every key fact, figure, quote, "
+    "named person, date, and piece of background/context present in the sources. "
+    "Develop the story fully — the finished piece should be at least as long as "
+    "the source reporting, never a shortened digest. Do not omit details to save "
+    "space, but never pad with filler either.\n"
+    "6. Return ONLY a single JSON object in the exact schema requested — no "
     "markdown fences, no commentary before or after."
 )
 
@@ -51,9 +56,11 @@ _OUTPUT_SCHEMA = {
     "title": "string — an original headline, max 120 chars, not copied from a source",
     "excerpt": "string — a 1–2 sentence standfirst/summary, max 300 chars",
     "body_html": (
-        "string — the article body as simple, valid HTML using only <p>, <h2>, "
-        "<ul>, <li>, <blockquote>, <strong>, <em> tags. 3–8 paragraphs. Do NOT "
-        "include a sources/credits list — that is added separately."
+        "string — the FULL article body as simple, valid HTML using only <p>, "
+        "<h2>, <ul>, <li>, <blockquote>, <strong>, <em> tags. Write the complete "
+        "story with as many paragraphs as the material needs (use <h2> "
+        "subheadings for longer pieces). Do NOT include a sources/credits list — "
+        "that is added separately."
     ),
     "meta_description": "string — a search-result snippet, max 155 chars",
 }
@@ -68,16 +75,28 @@ def build_user_prompt(sources: list[dict], *, angle: str = "") -> str:
     context window, and (optionally) steer the framing with ``angle``.
     """
     blocks: list[str] = []
+    longest = 0
     for i, src in enumerate(sources, start=1):
         body = (src.get("body") or src.get("summary") or "").strip()
         if len(body) > 6000:  # keep the prompt within a sane context budget
             body = body[:6000] + " …[truncated]"
+        longest = max(longest, len(body.split()))
         blocks.append(
             f"### SOURCE {i}: {src.get('name', 'Unknown outlet')}\n"
             f"Headline: {src.get('title', '').strip()}\n"
             f"URL: {src.get('url', '').strip()}\n"
             f"Reported content:\n{body or '(no body available — use the headline only)'}"
         )
+
+    # Anchor the length to the source material: aim for at least the longest
+    # source (a floor of 400 words), so the model expands rather than digests.
+    # Multiple sources naturally push past this as their unique facts add up.
+    target_words = max(400, longest)
+    length_note = (
+        f"\nLength: write a thorough article of at least ~{target_words} words — "
+        "comparable to, or a little longer than, the source reporting. Cover the "
+        "full story; do not condense it into a brief.\n"
+    )
 
     steer = f"\nEditor's angle for this piece: {angle.strip()}\n" if angle.strip() else ""
     schema = json.dumps(_OUTPUT_SCHEMA, indent=2)
@@ -88,6 +107,7 @@ def build_user_prompt(sources: list[dict], *, angle: str = "") -> str:
         f"You have {n} source report(s) below. Synthesise {plural} into ONE "
         "original news article for our outlet, following every rule in your "
         "instructions.\n"
+        f"{length_note}"
         f"{steer}"
         "\nReturn a JSON object with exactly these fields:\n"
         f"{schema}\n\n"
