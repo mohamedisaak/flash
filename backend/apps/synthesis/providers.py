@@ -46,6 +46,13 @@ class LLMError(RuntimeError):
     """
 
 
+# Hosted APIs (Groq) sit behind Cloudflare, which bans the stdlib's default
+# ``Python-urllib/x.y`` User-Agent outright (HTTP 403, Cloudflare error 1010 —
+# "banned browser signature"). Sending an explicit, browser-like UA gets us past
+# that bot filter. Ollama on localhost doesn't care, so one UA is fine for both.
+_USER_AGENT = "Mozilla/5.0 (compatible; FlashNewsBot/1.0; +https://flashnews)"
+
+
 @dataclass
 class LLMResult:
     """A completion plus the metadata we keep for the audit trail."""
@@ -78,7 +85,11 @@ def _post_json(url: str, payload: dict, timeout: int, headers: dict | None = Non
     req = urllib.request.Request(
         url,
         data=data,
-        headers={"Content-Type": "application/json", **(headers or {})},
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": _USER_AGENT,
+            **(headers or {}),
+        },
         method="POST",
     )
     try:
