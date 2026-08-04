@@ -37,7 +37,9 @@ services:
     dockerContext: backend
     healthCheckPath: /healthz
     # Run migrations once, before each new version goes live.
-    preDeployCommand: python manage.py migrate --noinput && python manage.py seed_cms
+    # A single command (Render's preDeploy does not run through a shell, so `&&`
+    # chaining does not work). `release` runs migrate then seeds CMS content.
+    preDeployCommand: python manage.py release
     # Persistent storage for user-uploaded media (survives deploys/restarts).
     # Single-instance only; switch to S3/R2 (USE_S3=True) to scale out.
     disk:
