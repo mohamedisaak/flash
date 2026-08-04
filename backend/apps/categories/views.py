@@ -30,7 +30,15 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Compute every row's article_count in one grouped query (instead of a
         # COUNT per serialized category). The serializer reads this annotation.
-        qs = super().get_queryset().annotate(**{ANNOTATION_ATTR: Count("articles")})
+        # NOTE: annotate() with an aggregate drops the model's Meta.ordering, so
+        # we re-apply it explicitly — otherwise rows come back in insertion order
+        # and the nav/admin lists (e.g. the numbered counties) look unsorted.
+        qs = (
+            super()
+            .get_queryset()
+            .annotate(**{ANNOTATION_ATTR: Count("articles")})
+            .order_by("order", "name")
+        )
         # ?level=top → only top-level sections; ?level=sub → only subcategories.
         level = self.request.query_params.get("level")
         if level == "top":
