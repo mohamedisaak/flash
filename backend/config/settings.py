@@ -400,6 +400,13 @@ CELERY_BEAT_SCHEDULE = {
 # JSON-LD (search engines require absolute URLs).
 SITE_URL = env("SITE_URL", default="http://localhost:8000")
 ORGANIZATION_NAME = env("ORGANIZATION_NAME", default="Flash News")
+
+# Shared secret for on-demand frontend revalidation: when staff edit CMS content
+# the backend POSTs to the Next.js site's /api/revalidate so the change appears
+# immediately instead of after the ISR window. Must match REVALIDATE_SECRET on
+# the web service. Blank = feature off (edits still appear on the normal ISR
+# timer). See apps/common/revalidate.py and web/src/app/api/revalidate/route.ts.
+REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
 ORGANIZATION_LOGO_URL = env("ORGANIZATION_LOGO_URL", default="")
 
 # ---------------------------------------------------------------------------

@@ -83,6 +83,8 @@ services:
         sync: false # same site origin(s), comma-separated
       - key: CSRF_TRUSTED_ORIGINS
         sync: false # same site origin(s), comma-separated
+      # Shared secret so the backend can trigger on-demand frontend revalidation.
+      - fromGroup: flash-shared
       # ALLOWED_HOSTS is auto-filled from RENDER_EXTERNAL_HOSTNAME (see settings).
 
   # --- Celery worker (+ embedded beat scheduler) --------------------------
@@ -147,3 +149,14 @@ services:
         sync: false # optional: ca-pub-…
       - key: NEXT_PUBLIC_ADSENSE_AUTO_ADS
         sync: false # optional: true/false
+      # Runtime secret (server-only) matching the backend's, so /api/revalidate
+      # accepts on-demand cache-purge requests from the backend.
+      - fromGroup: flash-shared
+
+# Shared env var groups (referenced by services above via `fromGroup`).
+envVarGroups:
+  - name: flash-shared
+    envVars:
+      # One generated secret shared by backend + web for on-demand revalidation.
+      - key: REVALIDATE_SECRET
+        generateValue: true
