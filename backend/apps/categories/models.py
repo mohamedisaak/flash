@@ -9,10 +9,22 @@ A category is a *one-to-many* parent of articles; a tag is *many-to-many* with
 articles. See ``teaching/30-database-design/`` for what those relationships mean.
 """
 
+import re
+
 from django.db import models
 from django.utils.text import slugify
 
 from apps.common.models import SEOFields, TimeStampedModel
+
+# A leading number in a category name, e.g. "047 Nairobi" → 47. Used to order
+# numbered lists (the 47 counties) by that number rather than alphabetically.
+_LEADING_NUMBER = re.compile(r"^\s*(\d+)")
+
+
+def leading_number(name: str) -> int | None:
+    """Return the integer a name starts with, or None. '047 Nairobi' → 47."""
+    match = _LEADING_NUMBER.match(name or "")
+    return int(match.group(1)) if match else None
 
 
 class Category(TimeStampedModel, SEOFields):
@@ -51,6 +63,13 @@ class Category(TimeStampedModel, SEOFields):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
+        # If no explicit order was set, derive it from a leading number in the
+        # name ("047 Nairobi" → 47), so numbered lists such as the counties sort
+        # by that number in the nav and admin. Editors who set an order keep it.
+        if not self.order:
+            number = leading_number(self.name)
+            if number is not None:
+                self.order = number
         super().save(*args, **kwargs)
 
 
