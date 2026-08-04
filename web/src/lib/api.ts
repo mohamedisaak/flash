@@ -77,7 +77,13 @@ export const api = {
 
   async listCategories(): Promise<Category[]> {
     // Short-ish cache so admin changes to category order/names show quickly.
-    const page = await getJson<Paginated<Category>>("/categories/", { revalidate: 120 });
+    // page_size=100 (the API max) so ALL categories come back in one page —
+    // otherwise the default 20-per-page limit truncates large child lists like
+    // the 47 counties, and the nav only shows the first ~13 of them.
+    const page = await getJson<Paginated<Category>>("/categories/", {
+      revalidate: 120,
+      searchParams: { page_size: 100 },
+    });
     return page?.results ?? [];
   },
 

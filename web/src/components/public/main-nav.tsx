@@ -30,6 +30,11 @@ export async function MainNav() {
         </Link>
         {top.map((c: Category) => {
           const kids = childrenOf(c.id);
+          // Long child lists (e.g. the 47 counties) expand horizontally into a
+          // multi-column mega-menu instead of one very tall column: up to 4
+          // columns, ~12 items each. Short lists stay a single column.
+          const cols = kids.length > 12 ? Math.min(4, Math.ceil(kids.length / 12)) : 1;
+          const colMin = cols === 1 ? "11rem" : "9rem";
           return (
             <div key={c.id} className="group relative">
               <Link
@@ -40,12 +45,15 @@ export async function MainNav() {
                 {kids.length > 0 && <Caret />}
               </Link>
               {kids.length > 0 && (
-                <div className="invisible absolute left-0 top-full z-20 min-w-44 bg-white text-[var(--foreground)] opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
+                <div
+                  className="invisible absolute left-0 top-full z-20 grid max-w-[92vw] gap-x-1 bg-white py-1 text-[var(--foreground)] opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100"
+                  style={{ gridTemplateColumns: `repeat(${cols}, minmax(${colMin}, 1fr))` }}
+                >
                   {kids.map((k) => (
                     <Link
                       key={k.id}
                       href={`/${k.slug}`}
-                      className="block px-4 py-2 text-sm hover:bg-gray-100"
+                      className="block whitespace-nowrap px-4 py-2 text-sm hover:bg-gray-100"
                     >
                       {k.name}
                     </Link>
