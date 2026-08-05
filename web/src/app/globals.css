@@ -70,6 +70,22 @@ body {
   list-style: decimal;
   padding-inline-start: 1.5rem;
 }
+/* Inline images and video embeds inserted from the editor. */
+.article-body :where(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+.article-body :where(iframe.video-embed) {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
 
 /* --- News ticker marquee --- */
 @keyframes ticker {

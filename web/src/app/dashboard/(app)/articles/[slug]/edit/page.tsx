@@ -28,7 +28,8 @@ export default function EditArticlePage({ params }: { params: Promise<{ slug: st
   });
 
   const mutation = useMutation({
-    mutationFn: (v: ArticleFormValues) => authApi.updateArticle(slug, formValuesToPayload(v)),
+    mutationFn: (args: { v: ArticleFormValues; file: File | null }) =>
+      authApi.updateArticle(slug, formValuesToPayload(args.v), args.file),
     onSuccess: () => router.push("/dashboard/articles"),
   });
 
@@ -50,8 +51,10 @@ export default function EditArticlePage({ params }: { params: Promise<{ slug: st
             category_id: article.category.id,
             status: article.status,
             published_at: isoToLocalInput(article.published_at),
+            image_caption: article.image_caption,
           }}
-          onSubmit={(v) => mutation.mutate(v)}
+          defaultFeaturedImage={article.featured_image}
+          onSubmit={(v, file) => mutation.mutate({ v, file })}
           submitting={mutation.isPending}
           serverError={mutation.error instanceof Error ? mutation.error.message : undefined}
           submitLabel="Save changes"

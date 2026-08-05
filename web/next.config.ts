@@ -61,6 +61,9 @@ const googleScriptHosts =
   "https://adservice.google.com";
 const googleFrameHosts =
   "https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com";
+// Video hosts editors can embed in article bodies (YouTube / Vimeo players).
+const videoFrameHosts =
+  "https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com";
 
 const csp = [
   "default-src 'self'",
@@ -73,8 +76,8 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   // Turbopack's dev runtime loads chunks/workers via eval and blob: URLs.
   `script-src 'self' 'unsafe-inline' ${googleScriptHosts}` + (isDev ? " 'unsafe-eval' blob:" : ""),
-  // Ads render inside cross-origin iframes; allow the Google ad frame hosts.
-  `frame-src 'self' ${googleFrameHosts}`,
+  // Ads render inside cross-origin iframes; allow the Google ad + video hosts.
+  `frame-src 'self' ${googleFrameHosts} ${videoFrameHosts}`,
   "worker-src 'self' blob:",
   `connect-src 'self' ${backendOrigin} https:` + (isDev ? " http: ws: wss:" : ""),
 ]

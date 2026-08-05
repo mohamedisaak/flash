@@ -94,4 +94,5 @@ export interface ArticleWritePayload {
   category_id: number;
   status: string;
   published_at?: string | null;
+  image_caption?: string;
 }

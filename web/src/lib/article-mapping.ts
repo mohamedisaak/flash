@@ -21,6 +21,7 @@ export function formValuesToPayload(v: ArticleFormValues): ArticleWritePayload {
     category_id: v.category_id,
     status: v.status,
     published_at,
+    image_caption: v.image_caption || "",
   };
 }
 

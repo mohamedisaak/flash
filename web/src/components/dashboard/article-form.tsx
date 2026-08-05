@@ -10,6 +10,7 @@
  * teaching/12-nextjs/07-dashboard-and-forms.md.
  */
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import type { Category } from "@/lib/types";
@@ -28,6 +29,7 @@ const schema = z.object({
   status: z.string(),
   // datetime-local string; validated further at submit for scheduled posts.
   published_at: z.string().optional(),
+  image_caption: z.string().optional(),
 });
 
 export type ArticleFormValues = z.infer<typeof schema>;
@@ -35,6 +37,7 @@ export type ArticleFormValues = z.infer<typeof schema>;
 export function ArticleForm({
   categories,
   defaultValues,
+  defaultFeaturedImage,
   onSubmit,
   submitting,
   serverError,
@@ -42,7 +45,8 @@ export function ArticleForm({
 }: {
   categories: Category[];
   defaultValues: Partial<ArticleFormValues>;
-  onSubmit: (values: ArticleFormValues) => void;
+  defaultFeaturedImage?: string | null;
+  onSubmit: (values: ArticleFormValues, featuredImage: File | null) => void;
   submitting: boolean;
   serverError?: string;
   submitLabel?: string;
@@ -58,6 +62,16 @@ export function ArticleForm({
     defaultValues: { status: "draft", content: "", ...defaultValues },
   });
 
+  // Featured (lead) image — a File to upload, previewed locally. In edit mode we
+  // start from the article's existing image URL.
+  const [featuredFile, setFeaturedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(defaultFeaturedImage ?? null);
+  const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setFeaturedFile(file);
+    if (file) setPreview(URL.createObjectURL(file));
+  };
+
   // Tiptap sets `content` imperatively, so register it manually.
   register("content");
   const content = watch("content") ?? "";
@@ -65,7 +79,10 @@ export function ArticleForm({
   const needsSchedule = status === "scheduled" || status === "published";
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form
+      onSubmit={handleSubmit((values) => onSubmit(values, featuredFile))}
+      className="space-y-5"
+    >
       <Field label="Title" htmlFor="title" error={errors.title?.message}>
         <Input id="title" {...register("title")} />
       </Field>
@@ -76,6 +93,39 @@ export function ArticleForm({
 
       <Field label="Excerpt (summary)" htmlFor="excerpt">
         <Textarea id="excerpt" rows={2} {...register("excerpt")} />
+      </Field>
+
+      <Field label="Featured image">
+        <div className="flex items-start gap-4">
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={preview}
+              alt="Featured preview"
+              className="h-24 w-40 rounded-md border border-[var(--border)] object-cover"
+            />
+          ) : (
+            <div className="flex h-24 w-40 items-center justify-center rounded-md border border-dashed border-[var(--border)] text-xs text-[var(--muted)]">
+              No image
+            </div>
+          )}
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onPickImage}
+              className="block text-sm"
+            />
+            <p className="text-xs text-[var(--muted)]">
+              JPG, PNG, WEBP or GIF. Shown as the post’s lead image. Add images and video inside the
+              article using the 🖼 / 🎬 buttons in the editor below.
+            </p>
+          </div>
+        </div>
+      </Field>
+
+      <Field label="Image caption" htmlFor="image_caption">
+        <Input id="image_caption" {...register("image_caption")} />
       </Field>
 
       <Field label="Content" error={errors.content?.message}>

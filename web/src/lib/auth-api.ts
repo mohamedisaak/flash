@@ -85,6 +85,18 @@ async function json<T>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** Build multipart form data for an article write that includes a file field. */
+function articleFormData(payload: ArticleWritePayload, featuredImage: File): FormData {
+  const fd = new FormData();
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === undefined || value === null) continue;
+    if (Array.isArray(value)) value.forEach((v) => fd.append(key, String(v)));
+    else fd.append(key, String(value));
+  }
+  fd.append("featured_image", featuredImage);
+  return fd;
+}
+
 export const authApi = {
   async login(username: string, password: string): Promise<void> {
     const res = await fetch(`${env.apiUrl}/auth/login/`, {
@@ -112,16 +124,29 @@ export const authApi = {
     return json<Article>(await authFetch(`/articles/${slug}/`));
   },
 
-  async createArticle(payload: ArticleWritePayload): Promise<Article> {
-    return json<Article>(
-      await authFetch("/articles/", { method: "POST", body: JSON.stringify(payload) }),
-    );
+  async createArticle(payload: ArticleWritePayload, featuredImage?: File | null): Promise<Article> {
+    const body = featuredImage
+      ? articleFormData(payload, featuredImage)
+      : JSON.stringify(payload);
+    return json<Article>(await authFetch("/articles/", { method: "POST", body }));
   },
 
-  async updateArticle(slug: string, payload: ArticleWritePayload): Promise<Article> {
-    return json<Article>(
-      await authFetch(`/articles/${slug}/`, { method: "PATCH", body: JSON.stringify(payload) }),
-    );
+  async updateArticle(
+    slug: string,
+    payload: ArticleWritePayload,
+    featuredImage?: File | null,
+  ): Promise<Article> {
+    const body = featuredImage
+      ? articleFormData(payload, featuredImage)
+      : JSON.stringify(payload);
+    return json<Article>(await authFetch(`/articles/${slug}/`, { method: "PATCH", body }));
+  },
+
+  /** Upload an inline editor image → its absolute URL. */
+  async uploadImage(file: File): Promise<{ url: string }> {
+    const fd = new FormData();
+    fd.append("file", file);
+    return json<{ url: string }>(await authFetch("/media/uploads/", { method: "POST", body: fd }));
   },
 
   async deleteArticle(slug: string): Promise<void> {

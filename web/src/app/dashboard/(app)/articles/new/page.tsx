@@ -15,7 +15,8 @@ export default function NewArticlePage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (v: ArticleFormValues) => authApi.createArticle(formValuesToPayload(v)),
+    mutationFn: (args: { v: ArticleFormValues; file: File | null }) =>
+      authApi.createArticle(formValuesToPayload(args.v), args.file),
     onSuccess: () => router.push("/dashboard/articles"),
   });
 
@@ -28,7 +29,7 @@ export default function NewArticlePage() {
         <ArticleForm
           categories={categories ?? []}
           defaultValues={{}}
-          onSubmit={(v) => mutation.mutate(v)}
+          onSubmit={(v, file) => mutation.mutate({ v, file })}
           submitting={mutation.isPending}
           serverError={mutation.error instanceof Error ? mutation.error.message : undefined}
           submitLabel="Create Post"

@@ -40,4 +40,5 @@ urlpatterns = [
     path("cms/", include("apps.cms.urls")),
     path("aggregation/", include("apps.aggregation.urls")),
     path("synthesis/", include("apps.synthesis.urls")),
+    path("media/", include("apps.media.urls")),
 ]
