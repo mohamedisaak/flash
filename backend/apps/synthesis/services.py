@@ -261,7 +261,11 @@ def _create_draft(data: dict, rows: list[AggregatedArticle], user, category_slug
         excerpt=str(data.get("excerpt", "")).strip()[:500],
         content=content_html,
         author=user,
-        category=_resolve_category(category_slug),
+        # Explicit choice wins; else auto-file into the section the sources were
+        # crawled for (first tagged source); else the default section.
+        category=_resolve_category(
+            category_slug or next((r.category for r in rows if r.category), "")
+        ),
         source=f"Synthesised from {credit}"[:255] if credit else "",
         status=ArticleStatus.DRAFT,  # never auto-publish — a human reviews first
         published_at=None,

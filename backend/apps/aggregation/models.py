@@ -36,6 +36,10 @@ class AggregatedArticle(TimeStampedModel):
         max_length=120, help_text="Human-readable source, e.g. 'Nation Africa'."
     )
     region = models.CharField(max_length=16, choices=SourceRegion.CHOICES, db_index=True)
+    # Editorial section this item was crawled for (e.g. "sports"), when it came
+    # from a category-scoped crawl. Blank for whole-site feeds. Used to auto-file
+    # the post into the right section on import/synthesis.
+    category = models.CharField(max_length=50, blank=True, db_index=True)
     # Stable per-source identity for de-duplication (RSS guid, or the URL).
     external_id = models.CharField(max_length=500)
 

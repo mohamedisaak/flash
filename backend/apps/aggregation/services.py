@@ -50,64 +50,100 @@ _DEFAULT_CATEGORY = ("world", "World")
 # ---------------------------------------------------------------------------
 # Ingestion
 # ---------------------------------------------------------------------------
-def _upsert(source, item, dry_run: bool) -> str:
-    """Insert or update one item. Returns 'created' | 'updated'."""
+def _upsert(source, item, dry_run: bool, category: str = "") -> str:
+    """Insert or update one item. Returns 'created' | 'updated'.
+
+    ``category`` tags the item with the editorial section it was crawled for
+    (empty for whole-site feeds). We only *set* a category, never clear one, so a
+    later whole-site pass doesn't wipe the section off an item already crawled by
+    category.
+    """
     exists = AggregatedArticle.objects.filter(
         source=source.slug, external_id=item.external_id
     ).exists()
     if dry_run:
         return "updated" if exists else "created"
 
+    defaults = {
+        "source_name": source.name,
+        "region": source.region,
+        "url": item.url,
+        "title": item.title,
+        "summary": item.summary,
+        "author": item.author,
+        "image_url": item.image_url,
+        "published_at": item.published_at,
+    }
+    if category:
+        defaults["category"] = category
     _, created = AggregatedArticle.objects.update_or_create(
         source=source.slug,
         external_id=item.external_id,
-        defaults={
-            "source_name": source.name,
-            "region": source.region,
-            "url": item.url,
-            "title": item.title,
-            "summary": item.summary,
-            "author": item.author,
-            "image_url": item.image_url,
-            "published_at": item.published_at,
-        },
+        defaults=defaults,
     )
     return "created" if created else "updated"
 
 
-def run_ingestion(slugs=None, max_items: int = 25, dry_run: bool = False, user=None) -> dict:
-    """Ingest the chosen sources and return a serialisable run summary."""
+def _crawl(source, max_items: int, dry_run: bool, totals: dict, category: str = "") -> dict:
+    """Fetch one feed and upsert its items, returning a per-feed result entry.
+
+    Shared by whole-site and category-scoped ingestion. One dead feed is
+    recorded in its entry and never aborts the run.
+    """
+    entry = {"created": 0, "updated": 0, "skipped": 0, "error": 0, "message": ""}
+    if not source.is_available:
+        entry["message"] = "No API key configured — skipped."
+        return entry
+    try:
+        items = fetch(source, max_items)
+    except FetchError as exc:
+        entry["error"] = 1
+        totals["error"] += 1
+        entry["message"] = str(exc)[:300]
+        logger.warning("Ingestion: %s failed: %s", source.slug, exc)
+        return entry
+    for item in items:
+        try:
+            result = _upsert(source, item, dry_run, category=category)
+            entry[result] += 1
+            totals[result] += 1
+        except Exception:  # noqa: BLE001 — never let one bad row abort the run
+            entry["error"] += 1
+            totals["error"] += 1
+            logger.exception("Ingestion: failed to store item from %s", source.slug)
+    return entry
+
+
+def run_ingestion(
+    slugs=None, categories=None, max_items: int = 25, dry_run: bool = False, user=None
+) -> dict:
+    """Ingest the chosen sources and return a serialisable run summary.
+
+    ``categories`` opts into category-scoped crawling: for each chosen Kenyan
+    source that supports it, pull the selected sections (Sports, Business, …)
+    instead of the whole site, tagging every item with its section. When
+    ``categories`` is empty, behaves as before (whole-site feeds).
+    """
     chosen = source_registry.resolve(slugs)
+    cats = [c for c in (categories or []) if c in source_registry.CATEGORY_BY_SLUG]
     detail: dict[str, dict] = {}
     totals = {"created": 0, "updated": 0, "skipped": 0, "error": 0}
 
-    for source in chosen:
-        entry = {"created": 0, "updated": 0, "skipped": 0, "error": 0, "message": ""}
-        if not source.is_available:
-            entry["message"] = "No API key configured — skipped."
-            detail[source.slug] = entry
-            continue
-        try:
-            items = fetch(source, max_items)
-        except FetchError as exc:
-            entry["error"] = 1
-            entry["message"] = str(exc)[:300]
-            totals["error"] += 1
-            detail[source.slug] = entry
-            logger.warning("Ingestion: %s failed: %s", source.slug, exc)
-            continue
-
-        for item in items:
-            try:
-                result = _upsert(source, item, dry_run)
-                entry[result] += 1
-                totals[result] += 1
-            except Exception as exc:  # noqa: BLE001 — never let one bad row abort the run
-                entry["error"] += 1
-                totals["error"] += 1
-                entry["message"] = str(exc)[:300]
-                logger.exception("Ingestion: failed to store item from %s", source.slug)
-        detail[source.slug] = entry
+    if cats:
+        crawlable = {s.slug for s in source_registry.category_crawl_sources()}
+        for base in chosen:
+            if base.slug not in crawlable:
+                continue  # non-Kenyan / API sources aren't category-crawled
+            for cat_slug in cats:
+                syn = source_registry.category_feed_source(base.slug, cat_slug)
+                if syn is None:
+                    continue
+                detail[f"{base.slug} · {cat_slug}"] = _crawl(
+                    syn, max_items, dry_run, totals, category=cat_slug
+                )
+    else:
+        for source in chosen:
+            detail[source.slug] = _crawl(source, max_items, dry_run, totals)
 
     run = IngestionRun.objects.create(
         sources=[s.slug for s in chosen],
@@ -124,6 +160,7 @@ def run_ingestion(slugs=None, max_items: int = 25, dry_run: bool = False, user=N
         "run_id": run.id,
         "dry_run": dry_run,
         "sources": [s.slug for s in chosen],
+        "categories": cats,
         **totals,
         "detail": detail,
     }
@@ -263,7 +300,9 @@ def import_to_article(
         excerpt=summary[:500],
         content=content_html,
         author=user,
-        category=_resolve_category(category_slug),
+        # Explicit choice wins; otherwise auto-file into the section this item
+        # was crawled for (e.g. "sports"); else the default section.
+        category=_resolve_category(category_slug or agg.category),
         source=agg.source_name,  # credit only — the outbound link is intentionally dropped
         status=ArticleStatus.PUBLISHED if publish else ArticleStatus.DRAFT,
         published_at=timezone.now() if publish else None,

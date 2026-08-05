@@ -10,6 +10,10 @@ admin panel.
 1. [What is news aggregation?](01-what-is-aggregation.md) — the concept: RSS vs
    APIs, why we store *metadata + a link* (not full text), de-duplication, the
    moderation → promotion workflow, diagram, exercises, quiz, interview questions.
+2. [Category-scoped crawling](02-category-crawling.md) — pulling one section
+   (Sports, Business, …) from the Kenyan press: native section RSS vs Google-News
+   site search, category tagging, and auto-filing into the right editorial
+   section on import/synthesis.
 
 ## File-paired explainers
 

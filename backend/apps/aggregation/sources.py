@@ -23,6 +23,7 @@ See ``teaching/40-news-aggregation/01-what-is-aggregation.md``.
 from __future__ import annotations
 
 import os
+import urllib.parse
 from dataclasses import dataclass, field
 
 
@@ -136,6 +137,16 @@ SOURCES: list[Source] = [
         url="https://www.kenyans.co.ke/rss.xml",
         homepage="https://www.kenyans.co.ke",
     ),
+    # Business Daily (Nation Media's business title). Whole-site RSS is
+    # business-heavy; also crawlable by category (see CATEGORY support below).
+    Source(
+        "business-daily",
+        "Business Daily",
+        SourceKind.RSS,
+        SourceRegion.KENYA,
+        url="https://www.businessdailyafrica.com/bd/rss.xml",
+        homepage="https://www.businessdailyafrica.com",
+    ),
     # Citizen dropped RSS but keeps a Google-News sitemap with direct URLs.
     Source(
         "citizen",
@@ -220,3 +231,112 @@ def resolve(slugs: list[str] | None) -> list[Source]:
     if not slugs:
         return list(SOURCES)
     return [BY_SLUG[s] for s in slugs if s in BY_SLUG]
+
+
+# ---------------------------------------------------------------------------
+# Category-scoped crawling (Kenyan sources)
+# ---------------------------------------------------------------------------
+# Crawl a single section (Sports, Business, …) from the Kenyan press instead of
+# the whole site. Two mechanisms, resolved per (source, category):
+#
+# - Native section RSS where the publisher exposes one (Standard, Tuko, Business
+#   Daily) — richest and most reliable.
+# - Otherwise a Google-News site search scoped to the publisher's domain and the
+#   category's keywords — uniform, works for every source (same trick The Star's
+#   base feed already uses; the URLs it yields are decoded back to the real
+#   article at extraction time, see ``extract.py``).
+#
+# Items ingested this way are tagged with the category so importing/synthesising
+# them files the post into the matching editorial section automatically.
+
+
+@dataclass(frozen=True)
+class NewsCategory:
+    slug: str  # editorial section slug the item is filed under, e.g. "sports"
+    label: str  # human label for the admin UI
+    query: str  # Google-News search terms (OR-joined) for the fallback feed
+
+
+CATEGORIES: list[NewsCategory] = [
+    NewsCategory("sports", "Sports", "sports OR football OR athletics OR rugby"),
+    NewsCategory("politics", "Politics", "politics OR parliament OR government OR president"),
+    NewsCategory("business", "Business", "business OR economy OR markets OR finance"),
+    NewsCategory("entertainment", "Entertainment", "entertainment OR music OR celebrity OR film"),
+    NewsCategory("health-lifestyle", "Health & Lifestyle", "health OR lifestyle OR wellness OR fitness"),
+    NewsCategory("technology", "Technology", "technology OR tech OR digital OR startup"),
+    NewsCategory("counties", "Counties", "county OR counties OR devolution OR governor"),
+]
+CATEGORY_BY_SLUG: dict[str, NewsCategory] = {c.slug: c for c in CATEGORIES}
+
+# Publisher domain used to scope the Google-News fallback feed. Only Kenyan
+# sources listed here support category crawling.
+GNEWS_DOMAIN: dict[str, str] = {
+    "nation": "nation.africa",
+    "standard": "standardmedia.co.ke",
+    "the-star": "the-star.co.ke",
+    "tuko": "tuko.co.ke",
+    "kenyans": "kenyans.co.ke",
+    "citizen": "citizen.digital",
+    "business-daily": "businessdailyafrica.com",
+}
+
+# Verified native per-section feeds, preferred over the Google-News fallback.
+# {source_slug: {category_slug: feed_url}}
+NATIVE_CATEGORY_FEEDS: dict[str, dict[str, str]] = {
+    "standard": {
+        "business": "https://www.standardmedia.co.ke/rss/business.php",
+        "politics": "https://www.standardmedia.co.ke/rss/politics.php",
+        "sports": "https://www.standardmedia.co.ke/rss/sports.php",
+        "entertainment": "https://www.standardmedia.co.ke/rss/entertainment.php",
+    },
+    "tuko": {
+        "politics": "https://www.tuko.co.ke/rss/politics.rss",
+        "sports": "https://www.tuko.co.ke/rss/sports.rss",
+        "entertainment": "https://www.tuko.co.ke/rss/entertainment.rss",
+        "technology": "https://www.tuko.co.ke/rss/technology.rss",
+    },
+    "business-daily": {
+        "business": "https://www.businessdailyafrica.com/bd/rss.xml",
+    },
+}
+
+
+def category_crawl_sources() -> list[Source]:
+    """The Kenyan sources that can be crawled by category."""
+    return [s for s in SOURCES if s.slug in GNEWS_DOMAIN]
+
+
+def _gnews_feed(domain: str, category: NewsCategory) -> str:
+    q = f"when:7d site:{domain} ({category.query})"
+    return (
+        "https://news.google.com/rss/search?q="
+        + urllib.parse.quote(q)
+        + "&hl=en-KE&gl=KE&ceid=KE:en"
+    )
+
+
+def category_feed_source(base_slug: str, category_slug: str) -> Source | None:
+    """A synthetic :class:`Source` that fetches ``category`` from ``base_slug``.
+
+    Prefers a native section feed; otherwise a Google-News site search. Keeps the
+    base publisher's slug/name (so items stay attributed to it) and is RSS-kind
+    (both feed types parse as RSS). Returns None if the source/category can't be
+    category-crawled.
+    """
+    base = BY_SLUG.get(base_slug)
+    category = CATEGORY_BY_SLUG.get(category_slug)
+    domain = GNEWS_DOMAIN.get(base_slug)
+    if not base or not category or not domain:
+        return None
+    url = NATIVE_CATEGORY_FEEDS.get(base_slug, {}).get(category_slug) or _gnews_feed(
+        domain, category
+    )
+    return Source(
+        slug=base.slug,
+        name=base.name,
+        kind=SourceKind.RSS,
+        region=base.region,
+        url=url,
+        homepage=base.homepage,
+        paywalled=base.paywalled,
+    )

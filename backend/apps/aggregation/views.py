@@ -54,7 +54,7 @@ class AggregatedArticleViewSet(
     queryset = AggregatedArticle.objects.select_related("imported_article")
     serializer_class = AggregatedArticleSerializer
     permission_classes = [IsEditorialStaff]
-    filterset_fields = ["source", "region", "is_hidden"]
+    filterset_fields = ["source", "region", "category", "is_hidden"]
     search_fields = ["title", "source_name", "author"]
     ordering_fields = ["published_at", "created_at"]
 
@@ -110,17 +110,30 @@ class AggregatedArticleViewSet(
             }
         )
 
+    @action(detail=False, methods=["get"])
+    def categories(self, request):
+        """The category catalogue for section-scoped Kenyan crawling."""
+        return Response(
+            [{"slug": c.slug, "label": c.label} for c in sources.CATEGORIES]
+        )
+
     @action(detail=False, methods=["post"])
     def run(self, request):
-        """Trigger an ingestion run synchronously and return its summary."""
+        """Trigger an ingestion run synchronously and return its summary.
+
+        ``categories`` (optional list of slugs) switches on section-scoped
+        crawling of the chosen Kenyan sources.
+        """
         data = request.data or {}
         slugs = data.get("sources") or None
+        cats = data.get("categories") or None
         try:
             max_items = min(int(data.get("max_items", 25)), 100)
         except (TypeError, ValueError):
             max_items = 25
         summary = services.run_ingestion(
             slugs=slugs,
+            categories=cats,
             max_items=max_items,
             dry_run=bool(data.get("dry_run", False)),
             user=request.user,

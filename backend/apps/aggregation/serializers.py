@@ -20,6 +20,7 @@ class AggregatedArticleSerializer(serializers.ModelSerializer):
             "source",
             "source_name",
             "region",
+            "category",
             "url",
             "title",
             "summary",

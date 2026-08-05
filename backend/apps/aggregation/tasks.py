@@ -20,9 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task
-def run_scheduled_ingestion(sources=None, max_items: int = 25) -> dict:
+def run_scheduled_ingestion(sources=None, categories=None, max_items: int = 25) -> dict:
     """Run ingestion in the background (no user attribution)."""
-    summary = run_ingestion(slugs=sources, max_items=max_items, dry_run=False, user=None)
+    summary = run_ingestion(
+        slugs=sources, categories=categories, max_items=max_items, dry_run=False, user=None
+    )
     logger.info(
         "run_scheduled_ingestion: +%d new, ~%d updated across %d source(s)",
         summary["created"],

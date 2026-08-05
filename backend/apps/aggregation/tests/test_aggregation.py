@@ -229,3 +229,35 @@ def test_sources_endpoint_reports_availability(api):
     assert by_slug["bbc"]["available"] is True  # RSS always available
     assert by_slug["newsapi"]["available"] is False  # no key in test env
     assert by_slug["newsapi"]["requires_key"] is True
+
+
+@pytest.mark.django_db
+def test_category_crawl_tags_items_and_autofiles(staff):
+    """Category-scoped crawl tags items, and import auto-files into that section."""
+    summary = services.run_ingestion(slugs=["standard"], categories=["sports"], max_items=5)
+    assert summary["categories"] == ["sports"]
+    assert summary["created"] == 3
+
+    aggs = AggregatedArticle.objects.all()
+    assert aggs.count() == 3
+    assert all(a.category == "sports" and a.source == "standard" for a in aggs)
+
+    # Import with no explicit category → files into the crawled "sports" section.
+    article = services.import_to_article(aggs.first(), staff)
+    assert article.category.slug == "sports"
+
+
+@pytest.mark.django_db
+def test_category_crawl_skips_non_kenyan_sources():
+    """Only Kenyan sources are category-crawled; BBC (international) is skipped."""
+    summary = services.run_ingestion(slugs=["bbc"], categories=["sports"], max_items=5)
+    assert summary["created"] == 0
+    assert AggregatedArticle.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_categories_endpoint(api):
+    r = api.get("/api/v1/aggregation/items/categories/")
+    assert r.status_code == 200
+    slugs = {c["slug"] for c in r.data}
+    assert {"sports", "business", "politics"} <= slugs

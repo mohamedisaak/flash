@@ -22,11 +22,17 @@ export interface IngestSource {
   count: number;
 }
 
+export interface IngestCategory {
+  slug: string;
+  label: string;
+}
+
 export interface AggItem {
   id: number;
   source: string;
   source_name: string;
   region: SourceRegion;
+  category: string;
   url: string;
   title: string;
   summary: string;
@@ -49,6 +55,7 @@ export interface RunSummary {
   run_id: number;
   dry_run: boolean;
   sources: string[];
+  categories: string[];
   created: number;
   updated: number;
   skipped: number;
@@ -92,6 +99,8 @@ function qs(params: Record<string, string | number | boolean | undefined>): stri
 
 export const ingestionApi = {
   sources: () => apiRequest<IngestSource[]>("/aggregation/items/sources/"),
+  // Crawlable sections (Sports, Business, …) for category-scoped ingestion.
+  crawlCategories: () => apiRequest<IngestCategory[]>("/aggregation/items/categories/"),
   stats: () => apiRequest<AggStats>("/aggregation/items/stats/"),
 
   // Editorial sections an imported item can be filed under (for the picker).
@@ -114,7 +123,12 @@ export const ingestionApi = {
       body: {},
     }),
 
-  run: (body: { sources: string[]; max_items: number; dry_run: boolean }) =>
+  run: (body: {
+    sources: string[];
+    categories?: string[];
+    max_items: number;
+    dry_run: boolean;
+  }) =>
     apiRequest<RunSummary>("/aggregation/items/run/", { method: "POST", body }),
 
   bulk: (action: BulkAction, ids: number[], category?: string) =>

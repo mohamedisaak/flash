@@ -110,13 +110,28 @@ export default function NewsIngestionPage() {
   // Section an imported item is filed under. The admin picks it here instead of
   // it being auto-derived from the source's region. "World" is always offered
   // even if it doesn't exist yet — the backend creates it on first import.
-  const [importCategory, setImportCategory] = useState("world");
+  // "" = Auto: file each item into the section it was crawled for (else World).
+  const [importCategory, setImportCategory] = useState("");
   const categoryOptions = useMemo(() => {
     const rows = categoriesPage?.results ?? [];
     const opts = rows.map((c) => ({ slug: c.slug, name: c.name }));
     if (!opts.some((o) => o.slug === "world")) opts.unshift({ slug: "world", name: "World" });
+    opts.unshift({ slug: "", name: "Auto — by crawled section" });
     return opts;
   }, [categoriesPage]);
+
+  // Crawlable sections (Sports, Business, …) for section-scoped Kenyan crawling.
+  const { data: crawlCats = [] } = useQuery({
+    queryKey: ["agg-crawl-cats"],
+    queryFn: ingestionApi.crawlCategories,
+  });
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const toggleCategory = (slug: string) =>
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      next.has(slug) ? next.delete(slug) : next.add(slug);
+      return next;
+    });
 
   // ---- Run ingestion state ----
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
@@ -146,6 +161,7 @@ export default function NewsIngestionPage() {
         sources: selectedSources.size
           ? [...selectedSources]
           : sources.filter((s) => s.available).map((s) => s.slug),
+        categories: selectedCategories.size ? [...selectedCategories] : undefined,
         max_items: maxItems,
         dry_run: dryRun,
       }),
@@ -346,6 +362,43 @@ export default function NewsIngestionPage() {
                   </label>
                 ))}
               </div>
+
+              {/* Section-scoped crawling — only under the Kenyan press group. */}
+              {region === "kenya" && crawlCats.length > 0 && (
+                <div className="mt-3 rounded-md border border-dashed border-[var(--border)] bg-gray-50 p-3">
+                  <p className="mb-2 text-xs font-medium text-[var(--muted)]">
+                    Crawl by section (optional) — pick one or more to pull only those sections from
+                    the selected Kenyan sources. Leave all unchecked to crawl whole sites.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {crawlCats.map((c) => (
+                      <label
+                        key={c.slug}
+                        className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm ${
+                          selectedCategories.has(c.slug)
+                            ? "border-brand bg-brand/5"
+                            : "border-[var(--border)] hover:border-brand"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.has(c.slug)}
+                          onChange={() => toggleCategory(c.slug)}
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                    {selectedCategories.size > 0 && (
+                      <button
+                        onClick={() => setSelectedCategories(new Set())}
+                        className="text-xs text-[var(--muted)] hover:underline"
+                      >
+                        clear sections
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -590,6 +643,11 @@ export default function NewsIngestionPage() {
                   </td>
                   <td className="py-3 pr-4">
                     <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">{r.source_name}</span>
+                    {r.category && (
+                      <span className="ml-1 rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700">
+                        {r.category}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 pr-4 whitespace-nowrap text-[var(--muted)]">
                     {r.published_at ? formatDate(r.published_at) : "—"}
