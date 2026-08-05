@@ -151,7 +151,7 @@ services:
       - key: NEXT_PUBLIC_MEDIA_HOST
         sync: false # optional: CDN/object-storage host if USE_S3=True
       - key: NEXT_PUBLIC_ADSENSE_CLIENT
-        sync: false # optional: ca-pub-…
+        value: "ca-pub-7778288288752826" # public AdSense publisher id (baked into the page)
       - key: NEXT_PUBLIC_ADSENSE_AUTO_ADS
         sync: false # optional: true/false
       # Runtime secret (server-only) matching the backend's, so /api/revalidate
