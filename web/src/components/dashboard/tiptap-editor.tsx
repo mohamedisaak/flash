@@ -133,6 +133,18 @@ export function TiptapEditor({
     },
   });
 
+  function handleImage() {
+    if (!editor) return;
+    const url = window.prompt("Paste an image URL (or leave blank to upload a file):");
+    if (url === null) return; // cancelled
+    const trimmed = url.trim();
+    if (trimmed) {
+      editor.chain().focus().insertContent({ type: "imageBlock", attrs: { src: trimmed, alt: "" } }).run();
+      return;
+    }
+    fileRef.current?.click(); // blank → upload a local file
+  }
+
   async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ""; // let the same file be re-picked later
@@ -208,7 +220,7 @@ export function TiptapEditor({
 
         <span className="mx-1 h-5 w-px bg-[var(--border)]" />
 
-        <ToolbarButton disabled={uploading} onClick={() => fileRef.current?.click()}>
+        <ToolbarButton disabled={uploading} onClick={handleImage}>
           {uploading ? "Uploading…" : "🖼 Image"}
         </ToolbarButton>
         <ToolbarButton onClick={handleVideo}>🎬 Video</ToolbarButton>

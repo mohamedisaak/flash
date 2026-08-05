@@ -38,6 +38,9 @@ function mediaRemotePatterns() {
       // Ignore a malformed origin rather than fail the build.
     }
   }
+  // Editors can set an article's lead image to an external URL (saving server
+  // disk), so next/image must be allowed to load images from any https host.
+  patterns.push({ protocol: "https", hostname: "**" });
   return patterns;
 }
 

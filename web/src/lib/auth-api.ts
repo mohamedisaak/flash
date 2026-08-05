@@ -93,7 +93,7 @@ function articleFormData(payload: ArticleWritePayload, featuredImage: File): For
     if (Array.isArray(value)) value.forEach((v) => fd.append(key, String(v)));
     else fd.append(key, String(value));
   }
-  fd.append("featured_image", featuredImage);
+  fd.append("featured_image_file", featuredImage);
   return fd;
 }
 

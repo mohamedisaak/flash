@@ -64,6 +64,7 @@ export interface ArticleListItem {
 export interface Article extends ArticleListItem {
   content: string;
   tags: Tag[];
+  featured_image_url: string;
   image_caption: string;
   source: string;
   shares: number;

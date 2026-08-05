@@ -83,6 +83,10 @@ class Article(TimeStampedModel, SEOFields):
 
     # --- Media ---
     featured_image = models.ImageField(upload_to="articles/%Y/%m/", blank=True, null=True)
+    # An external lead-image URL used *instead of* uploading a file — lets editors
+    # reference images where they already live online and saves server disk. When
+    # set, it takes precedence over ``featured_image`` on read.
+    featured_image_url = models.URLField(max_length=1000, blank=True)
     image_caption = models.CharField(max_length=255, blank=True)
     source = models.CharField(
         max_length=255, blank=True, help_text="Wire/agency credit, e.g. Reuters."

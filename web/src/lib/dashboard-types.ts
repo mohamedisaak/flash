@@ -95,4 +95,5 @@ export interface ArticleWritePayload {
   status: string;
   published_at?: string | null;
   image_caption?: string;
+  featured_image_url?: string;
 }

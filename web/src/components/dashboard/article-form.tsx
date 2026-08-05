@@ -30,6 +30,7 @@ const schema = z.object({
   // datetime-local string; validated further at submit for scheduled posts.
   published_at: z.string().optional(),
   image_caption: z.string().optional(),
+  featured_image_url: z.string().optional(),
 });
 
 export type ArticleFormValues = z.infer<typeof schema>;
@@ -62,14 +63,17 @@ export function ArticleForm({
     defaultValues: { status: "draft", content: "", ...defaultValues },
   });
 
-  // Featured (lead) image — a File to upload, previewed locally. In edit mode we
-  // start from the article's existing image URL.
+  // Featured (lead) image — either an external URL (preferred; saves disk) or an
+  // uploaded File. They're mutually exclusive: choosing one clears the other.
   const [featuredFile, setFeaturedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(defaultFeaturedImage ?? null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const urlValue = (watch("featured_image_url") ?? "").trim();
+  const shownImage = filePreview || urlValue || defaultFeaturedImage || null;
   const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setFeaturedFile(file);
-    if (file) setPreview(URL.createObjectURL(file));
+    setFilePreview(file ? URL.createObjectURL(file) : null);
+    if (file) setValue("featured_image_url", ""); // an upload replaces any URL
   };
 
   // Tiptap sets `content` imperatively, so register it manually.
@@ -97,28 +101,35 @@ export function ArticleForm({
 
       <Field label="Featured image">
         <div className="flex items-start gap-4">
-          {preview ? (
+          {shownImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={preview}
+              src={shownImage}
               alt="Featured preview"
-              className="h-24 w-40 rounded-md border border-[var(--border)] object-cover"
+              className="h-24 w-40 shrink-0 rounded-md border border-[var(--border)] object-cover"
             />
           ) : (
-            <div className="flex h-24 w-40 items-center justify-center rounded-md border border-dashed border-[var(--border)] text-xs text-[var(--muted)]">
+            <div className="flex h-24 w-40 shrink-0 items-center justify-center rounded-md border border-dashed border-[var(--border)] text-xs text-[var(--muted)]">
               No image
             </div>
           )}
-          <div className="space-y-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={onPickImage}
-              className="block text-sm"
+          <div className="flex-1 space-y-2">
+            <Input
+              placeholder="Paste an image URL (recommended — saves disk)…"
+              {...register("featured_image_url", {
+                onChange: () => {
+                  setFeaturedFile(null);
+                  setFilePreview(null);
+                },
+              })}
             />
+            <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
+              <span>or upload a file:</span>
+              <input type="file" accept="image/*" onChange={onPickImage} className="text-sm" />
+            </div>
             <p className="text-xs text-[var(--muted)]">
-              JPG, PNG, WEBP or GIF. Shown as the post’s lead image. Add images and video inside the
-              article using the 🖼 / 🎬 buttons in the editor below.
+              Reference an online image URL (no server storage used) or upload one rarely. Add images
+              &amp; video inside the article with the 🖼 / 🎬 buttons in the editor below.
             </p>
           </div>
         </div>

@@ -26,9 +26,27 @@ class AuthorMiniSerializer(serializers.Serializer):
     avatar = serializers.ImageField()
 
 
-class ArticleListSerializer(serializers.ModelSerializer):
+class _EffectiveImageMixin:
+    """Return the article's lead image: the external URL if set, else the upload.
+
+    Centralising this here means every client reads one ``featured_image`` field
+    and never has to know whether the image was uploaded or referenced by URL.
+    """
+
+    def get_featured_image(self, obj) -> str | None:
+        if obj.featured_image_url:
+            return obj.featured_image_url
+        if obj.featured_image:
+            request = self.context.get("request")
+            url = obj.featured_image.url
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+
+class ArticleListSerializer(_EffectiveImageMixin, serializers.ModelSerializer):
     author = AuthorMiniSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
+    featured_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -50,11 +68,19 @@ class ArticleListSerializer(serializers.ModelSerializer):
         ]
 
 
-class ArticleDetailSerializer(serializers.ModelSerializer):
+class ArticleDetailSerializer(_EffectiveImageMixin, serializers.ModelSerializer):
     # Read side: rich nested objects. Write side: accept ids for the relations.
     author = AuthorMiniSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+
+    # Lead image: read the effective URL (upload or external); write either an
+    # uploaded file (`featured_image_file`, multipart) or an external URL
+    # (`featured_image_url`).
+    featured_image = serializers.SerializerMethodField()
+    featured_image_file = serializers.ImageField(
+        source="featured_image", write_only=True, required=False, allow_null=True
+    )
 
     category_id = serializers.PrimaryKeyRelatedField(
         source="category", queryset=Category.objects.all(), write_only=True
@@ -78,6 +104,8 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
             "tags",
             "tag_ids",
             "featured_image",
+            "featured_image_file",
+            "featured_image_url",
             "image_caption",
             "source",
             "status",

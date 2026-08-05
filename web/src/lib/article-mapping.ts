@@ -22,6 +22,7 @@ export function formValuesToPayload(v: ArticleFormValues): ArticleWritePayload {
     status: v.status,
     published_at,
     image_caption: v.image_caption || "",
+    featured_image_url: v.featured_image_url || "",
   };
 }
 

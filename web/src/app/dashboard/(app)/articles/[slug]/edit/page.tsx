@@ -52,6 +52,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ slug: st
             status: article.status,
             published_at: isoToLocalInput(article.published_at),
             image_caption: article.image_caption,
+            featured_image_url: article.featured_image_url,
           }}
           defaultFeaturedImage={article.featured_image}
           onSubmit={(v, file) => mutation.mutate({ v, file })}
