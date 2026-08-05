@@ -50,11 +50,15 @@ async function getJson<T>(path: string, opts: FetchOptions = {}): Promise<T | nu
     const res = await fetch(buildUrl(path, opts.searchParams), {
       next: { revalidate: opts.revalidate ?? 60 },
       headers: { Accept: "application/json" },
+      // Fail fast if the backend hangs, so an ISR render doesn't stall for the
+      // whole request; the page falls back gracefully and retries on the next
+      // revalidation instead of blocking the visitor.
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {
-    // Backend unreachable (e.g. during an offline build) — degrade gracefully.
+    // Backend unreachable/slow (or an offline build) — degrade gracefully.
     return null;
   }
 }

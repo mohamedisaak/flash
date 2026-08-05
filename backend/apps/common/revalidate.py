@@ -32,15 +32,15 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def trigger_revalidate(tags: list[str]) -> None:
-    """Ask the frontend to revalidate the given cache tags (best effort)."""
+def trigger_revalidate(tags: list[str] | None = None, paths: list[str] | None = None) -> None:
+    """Ask the frontend to revalidate the given cache tags/paths (best effort)."""
     secret = getattr(settings, "REVALIDATE_SECRET", "")
     base = (getattr(settings, "SITE_URL", "") or "").rstrip("/")
     if not secret or not base:
         return  # not configured — rely on the normal ISR timer
 
     url = f"{base}/api/revalidate"
-    data = json.dumps({"tags": list(tags)}).encode("utf-8")
+    data = json.dumps({"tags": list(tags or []), "paths": list(paths or [])}).encode("utf-8")
     req = urllib.request.Request(
         url,
         data=data,

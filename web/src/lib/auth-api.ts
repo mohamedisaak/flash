@@ -16,8 +16,21 @@ import { clearTokens, getAccessToken, getRefreshToken, setTokens } from "./auth-
 import type { ArticleWritePayload, User } from "./dashboard-types";
 import type { Article, Category, Paginated } from "./types";
 
+/** A *definitive* auth failure (invalid/expired session) — the user must re-login. */
 class AuthError extends Error {}
 
+// Abort a request that hangs, so a slow/unreachable backend fails fast and the
+// caller can retry instead of the UI stalling indefinitely.
+const REQUEST_TIMEOUT_MS = 12_000;
+
+/**
+ * Exchange the refresh token for a new access token.
+ *
+ * Returns true on success, false only on a *definitive* failure (the refresh
+ * token itself is invalid/expired → 400/401). On a transient failure (network
+ * error, 5xx, timeout) it THROWS instead — so the caller does NOT clear the
+ * session and log the user out just because the backend was briefly slow.
+ */
 async function refreshAccessToken(): Promise<boolean> {
   const refresh = getRefreshToken();
   if (!refresh) return false;
@@ -25,10 +38,14 @@ async function refreshAccessToken(): Promise<boolean> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
-  if (!res.ok) return false;
-  const data = (await res.json()) as { access: string };
-  setTokens(data.access);
+  if (res.status === 400 || res.status === 401) return false; // refresh truly invalid
+  if (!res.ok) throw new Error(`Refresh temporarily failed (${res.status})`); // transient
+  // ROTATE_REFRESH_TOKENS is on server-side, so a new refresh token comes back
+  // too — persist it, or the next refresh would reuse a stale one.
+  const data = (await res.json()) as { access: string; refresh?: string };
+  setTokens(data.access, data.refresh);
   return true;
 }
 
@@ -43,9 +60,16 @@ async function authFetch(path: string, init: RequestInit = {}, retry = true): Pr
     headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(`${env.apiUrl}${path}`, { ...init, headers });
+  const res = await fetch(`${env.apiUrl}${path}`, {
+    ...init,
+    headers,
+    signal: init.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 
   if (res.status === 401 && retry) {
+    // refreshAccessToken() throws on transient failures — we let that propagate
+    // WITHOUT clearing tokens (the session may still be valid). Only a false
+    // return (definitively invalid refresh) logs the user out.
     if (await refreshAccessToken()) return authFetch(path, init, false);
     clearTokens();
     throw new AuthError("Session expired");

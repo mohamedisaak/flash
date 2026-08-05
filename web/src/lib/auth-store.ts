@@ -18,6 +18,7 @@ import type { User } from "./dashboard-types";
 
 const ACCESS_KEY = "flash_access";
 const REFRESH_KEY = "flash_refresh";
+const USER_KEY = "flash_user";
 
 interface AuthState {
   user: User | null;
@@ -30,13 +31,32 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   status: "loading",
-  setUser: (user) => set({ user, status: user ? "authenticated" : "anonymous" }),
+  setUser: (user) => {
+    // Cache the user so a page refresh can render the dashboard immediately from
+    // localStorage while /auth/me revalidates — instead of flashing to login.
+    if (typeof window !== "undefined") {
+      if (user) window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+      else window.localStorage.removeItem(USER_KEY);
+    }
+    set({ user, status: user ? "authenticated" : "anonymous" });
+  },
   setStatus: (status) => set({ status }),
   logout: () => {
     clearTokens();
     set({ user: null, status: "anonymous" });
   },
 }));
+
+/** The last-known user, cached in localStorage for instant hydrate on refresh. */
+export function getStoredUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(USER_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
 
 // --- token helpers (localStorage is browser-only; guard for SSR) ---
 export function getAccessToken(): string | null {
@@ -58,4 +78,5 @@ export function clearTokens(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(ACCESS_KEY);
   window.localStorage.removeItem(REFRESH_KEY);
+  window.localStorage.removeItem(USER_KEY);
 }

@@ -51,6 +51,11 @@ services:
         value: "False"
       - key: SECRET_KEY
         generateValue: true # Render generates a strong key
+      # 2 async (uvicorn) workers fit the starter plan's 512MB without memory
+      # pressure/swapping (3 was tight and caused slow, flaky responses). Raise
+      # this after upgrading the instance for more concurrency.
+      - key: WEB_CONCURRENCY
+        value: "2"
       - key: MEDIA_ROOT
         value: /var/media
       - key: ORGANIZATION_NAME

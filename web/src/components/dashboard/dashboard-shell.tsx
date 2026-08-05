@@ -12,8 +12,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { authApi } from "@/lib/auth-api";
-import { getAccessToken, useAuthStore } from "@/lib/auth-store";
+import { authApi, AuthError } from "@/lib/auth-api";
+import { getAccessToken, getStoredUser, useAuthStore } from "@/lib/auth-store";
 import { canPublish } from "@/lib/dashboard-types";
 import { env } from "@/lib/env";
 
@@ -115,10 +115,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       setStatus("anonymous");
       return;
     }
+    // Render immediately from the cached user (survives a slow/failed revalidate).
+    const cached = getStoredUser();
+    if (cached) setUser(cached);
     authApi
       .me()
       .then((u) => active && setUser(u))
-      .catch(() => active && setStatus("anonymous"));
+      .catch((err) => {
+        if (!active) return;
+        // Only log out on a *definitive* auth failure. A transient error (slow
+        // backend, network blip, 5xx) keeps the cached session — otherwise a
+        // refresh would bounce the user to login whenever the API is briefly
+        // unresponsive.
+        if (err instanceof AuthError || !cached) setStatus("anonymous");
+      });
     return () => {
       active = false;
     };

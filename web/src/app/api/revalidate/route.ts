@@ -45,15 +45,21 @@ export async function POST(req: NextRequest) {
   }
 
   let tags: string[] = [];
+  let paths: string[] = [];
   try {
-    const body = (await req.json()) as { tags?: unknown };
+    const body = (await req.json()) as { tags?: unknown; paths?: unknown };
     if (Array.isArray(body.tags)) {
       tags = body.tags.filter((t): t is string => typeof t === "string");
+    }
+    if (Array.isArray(body.paths)) {
+      paths = body.paths.filter((p): p is string => typeof p === "string");
     }
   } catch {
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
 
   for (const tag of tags) purge(tag);
-  return NextResponse.json({ revalidated: true, tags, now: Date.now() });
+  // Explicit paths let the backend target a specific article/category page.
+  for (const path of paths) revalidatePath(path);
+  return NextResponse.json({ revalidated: true, tags, paths, now: Date.now() });
 }
